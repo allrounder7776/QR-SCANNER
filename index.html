@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 
 <head>
 
@@ -10,10 +10,8 @@
 
 <title>QR Scanner → Google Sheet</title>
 
-<!-- QR Scanner -->
 <script src="https://unpkg.com/html5-qrcode"></script>
 
-<!-- Google OAuth -->
 <script src="https://accounts.google.com/gsi/client"></script>
 
 <style>
@@ -31,14 +29,18 @@ h2 {
 }
 
 #loginBtn {
-  padding: 12px 20px;
+  padding: 13px 22px;
   font-size: 17px;
   border: none;
-  border-radius: 6px;
+  border-radius: 7px;
   background: #4285f4;
   color: white;
   cursor: pointer;
   margin-bottom: 15px;
+}
+
+#loginBtn:active {
+  transform: scale(0.98);
 }
 
 #reader {
@@ -46,13 +48,16 @@ h2 {
   max-width: 500px;
   margin: auto;
   background: white;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 #message {
   margin-top: 20px;
-  font-size: 19px;
+  font-size: 18px;
   font-weight: bold;
-  min-height: 40px;
+  min-height: 45px;
+  line-height: 1.5;
 }
 
 .success {
@@ -76,11 +81,14 @@ h2 {
 
 <h2>📷 QR Code Scanner</h2>
 
+
 <button id="loginBtn">
   🔐 Google Account Connect करें
 </button>
 
+
 <div id="reader"></div>
+
 
 <div id="message" class="info">
   पहले Google Account Connect करें
@@ -102,12 +110,17 @@ const SPREADSHEET_ID =
 "19CzQLHAihdyNl51W4nzcfzlYGs5V6n1PcOxCWwN-xRg";
 
 
-const SHEET_NAME = "Sheet1";
+const SHEET_NAME =
+"Sheet1";
 
 
 const SHEETS_SCOPE =
 "https://www.googleapis.com/auth/spreadsheets";
 
+
+// =====================================================
+// VARIABLES
+// =====================================================
 
 let accessToken = null;
 
@@ -124,7 +137,7 @@ let saving = false;
 // MESSAGE
 // =====================================================
 
-function message(text, type = "info") {
+function showMessage(text, type = "info") {
 
   const box =
     document.getElementById("message");
@@ -137,10 +150,12 @@ function message(text, type = "info") {
 
 
 // =====================================================
-// GOOGLE OAUTH INITIALIZE
+// PAGE LOAD
 // =====================================================
 
-window.onload = function () {
+window.addEventListener("load", function () {
+
+  // Google library check
 
   if (
     typeof google === "undefined" ||
@@ -148,15 +163,16 @@ window.onload = function () {
     !google.accounts.oauth2
   ) {
 
-    message(
+    showMessage(
       "❌ Google Login load नहीं हुआ। Internet check करें।",
       "error"
     );
 
     return;
-
   }
 
+
+  // Google OAuth client
 
   tokenClient =
     google.accounts.oauth2.initTokenClient({
@@ -167,12 +183,35 @@ window.onload = function () {
 
       callback: function (response) {
 
+        console.log(
+          "Google OAuth Response:",
+          response
+        );
+
+
+        // Authorization error
+
         if (response.error) {
 
-          console.error(response);
+          accessToken = null;
 
-          message(
-            "❌ Google authorization failed",
+          showMessage(
+            "❌ Google authorization failed<br>" +
+            (response.error_description ||
+             response.error),
+            "error"
+          );
+
+          return;
+        }
+
+
+        // Token received
+
+        if (!response.access_token) {
+
+          showMessage(
+            "❌ Google access token नहीं मिला।",
             "error"
           );
 
@@ -188,8 +227,8 @@ window.onload = function () {
           .style.display = "none";
 
 
-        message(
-          "✅ Google Account Connected<br>📷 अब QR Scan करें",
+        showMessage(
+          "✅ Google Account Connected<br>📷 अब QR Code Scan करें",
           "success"
         );
 
@@ -200,12 +239,11 @@ window.onload = function () {
 
     });
 
-
-};
+});
 
 
 // =====================================================
-// GOOGLE LOGIN BUTTON
+// GOOGLE LOGIN
 // =====================================================
 
 document.getElementById("loginBtn")
@@ -213,14 +251,19 @@ document.getElementById("loginBtn")
 
     if (!tokenClient) {
 
-      message(
-        "❌ Google Login अभी तैयार नहीं है। Page refresh करें।",
+      showMessage(
+        "❌ Google Login तैयार नहीं है। Page refresh करें।",
         "error"
       );
 
       return;
-
     }
+
+
+    showMessage(
+      "⏳ Google authorization हो रहा है...",
+      "info"
+    );
 
 
     tokenClient.requestAccessToken({
@@ -231,7 +274,7 @@ document.getElementById("loginBtn")
 
 
 // =====================================================
-// START QR SCANNER
+// START SCANNER
 // =====================================================
 
 function startScanner() {
@@ -261,7 +304,9 @@ function startScanner() {
 
   scanner.start(
 
-    { facingMode: "environment" },
+    {
+      facingMode: "environment"
+    },
 
     config,
 
@@ -275,7 +320,7 @@ function startScanner() {
 
     scanning = true;
 
-    message(
+    showMessage(
       "📷 QR Code Scan करें...",
       "info"
     );
@@ -284,10 +329,15 @@ function startScanner() {
 
   .catch(function (error) {
 
-    console.error(error);
+    console.error(
+      "Camera Error:",
+      error
+    );
 
-    message(
-      "❌ Camera start नहीं हुआ: " + error,
+
+    showMessage(
+      "❌ Camera start नहीं हुआ:<br>" +
+      error,
       "error"
     );
 
@@ -297,7 +347,7 @@ function startScanner() {
 
 
 // =====================================================
-// QR SUCCESS
+// QR SCAN SUCCESS
 // =====================================================
 
 async function onScanSuccess(decodedText, decodedResult) {
@@ -312,27 +362,47 @@ async function onScanSuccess(decodedText, decodedResult) {
   scanning = false;
 
 
-  message(
-    "⏳ QR पढ़ लिया गया... Google Sheet में entry हो रही है...",
+  console.log(
+    "QR DATA:",
+    decodedText
+  );
+
+
+  showMessage(
+    "⏳ QR पढ़ लिया गया...<br>Google Sheet में entry हो रही है...",
     "info"
   );
 
 
   try {
 
+    // QR data को Sheet row में convert करें
+
     const row =
       convertQRToRow(decodedText);
 
 
-    console.log("QR DATA:", decodedText);
-
-    console.log("SHEET ROW:", row);
-
-
-    await saveToGoogleSheet(row);
+    console.log(
+      "ROW TO SAVE:",
+      row
+    );
 
 
-    message(
+    // Google Sheets API
+
+    const result =
+      await saveToGoogleSheet(row);
+
+
+    console.log(
+      "FINAL SHEETS RESULT:",
+      result
+    );
+
+
+    // केवल वास्तविक update के बाद success
+
+    showMessage(
       "✅ Entry Successfully Save हो गई",
       "success"
     );
@@ -341,29 +411,34 @@ async function onScanSuccess(decodedText, decodedResult) {
     beep();
 
 
+    // अगला scan
+
     setTimeout(function () {
 
       saving = false;
 
       scanning = true;
 
-      message(
+      showMessage(
         "📷 अगला QR Code Scan करें...",
         "info"
       );
 
     }, 1500);
 
-
   }
+
 
   catch (error) {
 
-    console.error(error);
+    console.error(
+      "SAVE ERROR:",
+      error
+    );
 
 
-    message(
-      "❌ Entry Save नहीं हुई<br>" +
+    showMessage(
+      "❌ Entry Save नहीं हुई<br><br>" +
       error.message,
       "error"
     );
@@ -375,12 +450,12 @@ async function onScanSuccess(decodedText, decodedResult) {
 
       scanning = true;
 
-      message(
+      showMessage(
         "📷 फिर से QR Code Scan करें...",
         "info"
       );
 
-    }, 3000);
+    }, 4000);
 
   }
 
@@ -396,13 +471,14 @@ function convertQRToRow(qrText) {
   let data = null;
 
 
-  // -----------------------------------------------
-  // JSON QR
-  // -----------------------------------------------
+  // ---------------------------------------------------
+  // JSON QR try
+  // ---------------------------------------------------
 
   try {
 
-    data = JSON.parse(qrText);
+    data =
+      JSON.parse(qrText);
 
   }
 
@@ -413,70 +489,119 @@ function convertQRToRow(qrText) {
   }
 
 
-  // -----------------------------------------------
-  // अगर QR JSON है
-  // -----------------------------------------------
+  // ---------------------------------------------------
+  // JSON QR
+  // ---------------------------------------------------
 
   if (
     data &&
     typeof data === "object"
   ) {
 
-    return [
+    const date =
+      data.date ||
+      data.DATE ||
+      getToday();
 
-      data.date || getToday(),
 
+    const awb =
       data.awb ||
       data.AWB ||
       data.article ||
       data.articleNo ||
-      "",
+      data.article_no ||
+      "";
 
+
+    const name =
       data.name ||
       data.NAME ||
-      "",
+      "";
 
+
+    const destination =
       data.destination ||
       data.DESTINATION ||
-      "",
+      "";
 
+
+    const articleNo =
       data.articleNo ||
       data.article_no ||
       data.article ||
-      "",
+      data.ARTICLE ||
+      "";
 
+
+    const weight =
       data.weight ||
       data.WEIGHT ||
-      "",
+      "";
 
+
+    const mobile =
       data.mobile ||
       data.mobileNo ||
       data.mobile_no ||
-      "",
+      data.MOBILE ||
+      "";
 
+
+    const order =
       data.order ||
       data.orderNo ||
       data.order_no ||
-      "",
+      data.ORDER ||
+      "";
 
+
+    const live =
       data.live ||
       data.liveNo ||
       data.live_no ||
-      "",
+      data.LIVE ||
+      "";
 
+
+    const courier =
       data.courier ||
-      ""
+      data.COURIER ||
+      "";
+
+
+    return [
+
+      date,
+
+      awb,
+
+      name,
+
+      destination,
+
+      articleNo,
+
+      weight,
+
+      mobile,
+
+      order,
+
+      live,
+
+      courier
 
     ];
 
   }
 
 
-  // -----------------------------------------------
-  // अगर QR JSON नहीं है
-  // -----------------------------------------------
+  // ---------------------------------------------------
+  // NON JSON QR
+  // ---------------------------------------------------
 
-  // पूरा QR text AWB column में जाएगा
+  // अगर QR JSON नहीं है,
+  // तो पूरा QR data AWB column में save होगा।
 
   return [
 
@@ -506,11 +631,13 @@ function convertQRToRow(qrText) {
 
 
 // =====================================================
-// SAVE DIRECTLY TO GOOGLE SHEETS API
+// GOOGLE SHEETS API SAVE
 // =====================================================
 
 async function saveToGoogleSheet(row) {
 
+
+  // Token check
 
   if (!accessToken) {
 
@@ -521,11 +648,15 @@ async function saveToGoogleSheet(row) {
   }
 
 
+  // A:J range
+
   const range =
     encodeURIComponent(
       SHEET_NAME + "!A:J"
     );
 
+
+  // Google Sheets append API
 
   const url =
     "https://sheets.googleapis.com/v4/spreadsheets/" +
@@ -534,73 +665,201 @@ async function saveToGoogleSheet(row) {
     range +
     ":append" +
     "?valueInputOption=USER_ENTERED" +
-    "&insertDataOption=INSERT_ROWS";
+    "&insertDataOption=INSERT_ROWS" +
+    "&includeValuesInResponse=true";
+
+
+  console.log(
+    "SHEETS API URL:",
+    url
+  );
 
 
   const response =
-    await fetch(url, {
+    await fetch(
 
-      method: "POST",
+      url,
 
-      headers: {
+      {
 
-        "Authorization":
-          "Bearer " + accessToken,
+        method: "POST",
 
-        "Content-Type":
-          "application/json"
+        headers: {
 
-      },
+          "Authorization":
+            "Bearer " + accessToken,
 
-      body: JSON.stringify({
+          "Content-Type":
+            "application/json"
 
-        majorDimension: "ROWS",
+        },
 
-        values: [
-          row
-        ]
+        body:
+          JSON.stringify({
 
-      })
+            majorDimension:
+              "ROWS",
 
-    });
+            values:
+              [
+                row
+              ]
 
+          })
 
-  const result =
-    await response.json();
+      }
 
-
-  if (!response.ok) {
-
-    console.error(
-      "Google Sheets API Error:",
-      result
     );
 
 
-    // Token expire हो गया हो
-    if (
-      response.status === 401 ||
-      response.status === 403
-    ) {
+  // Response text
 
-      accessToken = null;
+  const text =
+    await response.text();
 
-    }
 
+  console.log(
+    "RAW API RESPONSE:",
+    text
+  );
+
+
+  let result;
+
+
+  // JSON response
+
+  try {
+
+    result =
+      JSON.parse(text);
+
+  }
+
+  catch (e) {
 
     throw new Error(
-      result.error?.message ||
-      "Google Sheets API Error"
+      "Google Sheets ने invalid response दिया:<br>" +
+      text
     );
 
   }
 
 
   console.log(
-    "Google Sheet Response:",
+    "PARSED API RESPONSE:",
     result
   );
 
+
+  // API error
+
+  if (!response.ok) {
+
+    // Token expired
+
+    if (
+      response.status === 401
+    ) {
+
+      accessToken = null;
+
+      document.getElementById("loginBtn")
+        .style.display = "inline-block";
+
+    }
+
+
+    if (
+      response.status === 403
+    ) {
+
+      throw new Error(
+        "Google ने Sheet में लिखने की permission नहीं दी। सुनिश्चित करें कि आपने सही Google Account से Allow किया है और उस account को Sheet का Editor access है।"
+      );
+
+    }
+
+
+    if (
+      response.status === 404
+    ) {
+
+      throw new Error(
+        "Spreadsheet या Sheet1 नहीं मिली। Spreadsheet ID और Sheet name check करें।"
+      );
+
+    }
+
+
+    throw new Error(
+
+      result.error?.message ||
+
+      (
+        "Google Sheets API Error: HTTP " +
+        response.status
+      )
+
+    );
+
+  }
+
+
+  // ---------------------------------------------------
+  // IMPORTANT SUCCESS CHECK
+  // ---------------------------------------------------
+
+  if (
+    !result.updates
+  ) {
+
+    throw new Error(
+      "Google Sheets ने update information नहीं दी।"
+    );
+
+  }
+
+
+  const updatedCells =
+    Number(
+      result.updates.updatedCells || 0
+    );
+
+
+  const updatedRows =
+    Number(
+      result.updates.updatedRows || 0
+    );
+
+
+  console.log(
+    "Updated Cells:",
+    updatedCells
+  );
+
+
+  console.log(
+    "Updated Rows:",
+    updatedRows
+  );
+
+
+  // वास्तविक save verify
+
+  if (
+    updatedCells < 1 ||
+    updatedRows < 1
+  ) {
+
+    throw new Error(
+      "Google Sheets में कोई नई row save नहीं हुई।"
+    );
+
+  }
+
+
+  // SUCCESS
 
   return result;
 
@@ -613,7 +872,9 @@ async function saveToGoogleSheet(row) {
 
 function getToday() {
 
-  const now = new Date();
+  const now =
+    new Date();
+
 
   return now.toLocaleDateString(
     "en-GB"
@@ -649,7 +910,9 @@ function beep() {
 
     oscillator.connect(gain);
 
-    gain.connect(audio.destination);
+    gain.connect(
+      audio.destination
+    );
 
 
     oscillator.frequency.value =
@@ -671,7 +934,10 @@ function beep() {
 
   catch (e) {
 
-    console.log(e);
+    console.log(
+      "Beep error:",
+      e
+    );
 
   }
 
@@ -684,7 +950,7 @@ function beep() {
 
 function onScanFailure(error) {
 
-  // Continuous scanning में errors ignore करें
+  // Continuous scanner errors ignore करें
 
 }
 
