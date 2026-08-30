@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="hi">
 
@@ -129,10 +130,9 @@ let scanning = false;
 
 let saving = false;
 
+
 // =====================================================
-// IMPORTANT
 // NEW ENTRY ALWAYS STARTS FROM ROW 2
-// THEN ROW 3, 4, 5, 6...
 // =====================================================
 
 let nextRow = 2;
@@ -208,10 +208,6 @@ window.addEventListener(
       return;
     }
 
-
-    // ================================================
-    // OAuth TOKEN CLIENT
-    // ================================================
 
     tokenClient =
       google.accounts.oauth2.initTokenClient({
@@ -364,8 +360,6 @@ function handleTokenResponse(response) {
   );
 
 
-  // पहले Sheet को test करें
-
   testSheetAccess();
 
 }
@@ -460,8 +454,6 @@ async function testSheetAccess() {
       "Spreadsheet access: OK"
     );
 
-
-    // Sheet1 check
 
     const sheets =
       result.sheets || [];
@@ -710,10 +702,6 @@ async function onScanSuccess(
     );
 
 
-    // IMPORTANT:
-    // SAVE CURRENT ROW
-    // ROW 2 FIRST
-    // THEN 3, 4, 5...
     const result =
       await saveToGoogleSheet(
         row
@@ -743,14 +731,11 @@ async function onScanSuccess(
     );
 
 
-    // ================================================
-    // FINAL SUCCESS
-    // ================================================
-
     showMessage(
       "✅ Entry Successfully Save हो गई<br>" +
       "Row No: " +
-      (nextRow - 1),
+      (nextRow - 1) +
+      "<br>🚚 Courier सुरक्षित है",
       "success"
     );
 
@@ -813,7 +798,7 @@ async function onScanSuccess(
 
         showMessage(
           "📷 फिर से QR Code Scan करें...",
-          "info"
+          "error"
         );
 
 
@@ -853,9 +838,13 @@ function convertQRToRow(qrText) {
   }
 
 
-  // ================================================
+  // ===================================================
   // JSON QR
-  // ================================================
+  //
+  // IMPORTANT:
+  // Courier को यहाँ से SAVE नहीं किया जाएगा।
+  // Courier column J को Google Sheet खुद handle करेगा.
+  // ===================================================
 
   if (
     data &&
@@ -902,10 +891,6 @@ function convertQRToRow(qrText) {
       data.live ||
       data.liveNo ||
       data.live_no ||
-      "",
-
-      data.courier ||
-      data.COURIER ||
       ""
 
     ];
@@ -913,17 +898,15 @@ function convertQRToRow(qrText) {
   }
 
 
-  // ================================================
+  // ===================================================
   // NON JSON QR
-  // ================================================
+  // ===================================================
 
   return [
 
     getToday(),
 
     qrText,
-
-    "",
 
     "",
 
@@ -947,6 +930,18 @@ function convertQRToRow(qrText) {
 // =====================================================
 // SAVE TO GOOGLE SHEETS
 // =====================================================
+//
+// IMPORTANT FIX:
+//
+// पहले:
+// A:J  ---> Courier वाला J column भी overwrite हो रहा था.
+//
+// अब:
+// A:I  ---> केवल QR की 9 fields save होंगी.
+//
+// J column को बिल्कुल touch नहीं किया जाएगा.
+// इसलिए J में मौजूद Courier formula/value delete नहीं होगी.
+// =====================================================
 
 async function saveToGoogleSheet(row) {
 
@@ -958,19 +953,6 @@ async function saveToGoogleSheet(row) {
 
   }
 
-
-  // ================================================
-  // VERY IMPORTANT
-  //
-  // nextRow starts from 2.
-  //
-  // First scan  -> Row 2
-  // Second scan -> Row 3
-  // Third scan  -> Row 4
-  // Fourth scan -> Row 5
-  //
-  // Existing rows like 300/450 are NOT used.
-  // ================================================
 
   debug(
     "Preparing Sheets API save..."
@@ -987,12 +969,19 @@ async function saveToGoogleSheet(row) {
     nextRow;
 
 
+  // ===================================================
+  // ONLY A:I
+  //
+  // J = COURIER
+  // J को जानबूझकर छोड़ रहे हैं.
+  // ===================================================
+
   const range =
     encodeURIComponent(
       SHEET_NAME +
       "!A" +
       rowToSave +
-      ":J" +
+      ":I" +
       rowToSave
     );
 
@@ -1006,7 +995,12 @@ async function saveToGoogleSheet(row) {
 
 
   debug(
-    "Sending PUT request..."
+    "Writing only A:I..."
+  );
+
+
+  debug(
+    "Courier column J will NOT be modified."
   );
 
 
@@ -1114,6 +1108,7 @@ async function saveToGoogleSheet(row) {
   const updatedRows =
     Number(
       result.updatedRows ||
+      result.updates?.updatedRows ||
       0
     );
 
@@ -1121,6 +1116,7 @@ async function saveToGoogleSheet(row) {
   const updatedCells =
     Number(
       result.updatedCells ||
+      result.updates?.updatedCells ||
       0
     );
 
@@ -1137,12 +1133,9 @@ async function saveToGoogleSheet(row) {
   }
 
 
-  // ================================================
+  // ===================================================
   // SUCCESS
-  //
-  // Current row successfully saved.
-  // Now move to the NEXT row.
-  // ================================================
+  // ===================================================
 
   nextRow =
     rowToSave + 1;
@@ -1156,6 +1149,16 @@ async function saveToGoogleSheet(row) {
   debug(
     "Saved row: " +
     rowToSave
+  );
+
+
+  debug(
+    "A:I saved successfully."
+  );
+
+
+  debug(
+    "J (Courier) was NOT modified."
   );
 
 
@@ -1272,3 +1275,4 @@ function onScanFailure(error) {
 
 </body>
 </html>
+```
