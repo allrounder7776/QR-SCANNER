@@ -1,16 +1,20 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
 
 <meta charset="UTF-8">
 
 <meta name="viewport"
-      content="width=device-width, initial-scale=1">
+      content="width=device-width, initial-scale=1.0">
 
-<title>QR Code Scanner</title>
+<title>QR Scanner → Google Sheet</title>
 
+<!-- QR Scanner -->
 <script src="https://unpkg.com/html5-qrcode"></script>
+
+<!-- Google OAuth -->
+<script src="https://accounts.google.com/gsi/client"></script>
 
 <style>
 
@@ -23,19 +27,30 @@ body {
 }
 
 h2 {
-  margin-bottom: 20px;
+  margin-bottom: 15px;
+}
+
+#loginBtn {
+  padding: 12px 20px;
+  font-size: 17px;
+  border: none;
+  border-radius: 6px;
+  background: #4285f4;
+  color: white;
+  cursor: pointer;
+  margin-bottom: 15px;
 }
 
 #reader {
   width: 100%;
-  max-width: 650px;
+  max-width: 500px;
   margin: auto;
   background: white;
 }
 
 #message {
   margin-top: 20px;
-  font-size: 20px;
+  font-size: 19px;
   font-weight: bold;
   min-height: 40px;
 }
@@ -48,6 +63,10 @@ h2 {
   color: red;
 }
 
+.info {
+  color: #333;
+}
+
 </style>
 
 </head>
@@ -57,10 +76,14 @@ h2 {
 
 <h2>📷 QR Code Scanner</h2>
 
+<button id="loginBtn">
+  🔐 Google Account Connect करें
+</button>
+
 <div id="reader"></div>
 
-<div id="message">
-  📷 QR Code Scan करें...
+<div id="message" class="info">
+  पहले Google Account Connect करें
 </div>
 
 
@@ -68,35 +91,207 @@ h2 {
 
 
 // =====================================================
-// GOOGLE APPS SCRIPT URL
+// GOOGLE SETTINGS
 // =====================================================
 
-const API_URL =
-AKfycbxIbSUzPRzBSxAz2CScV0ztsCA-Kpk-58iqh_XaBabQM-5FFeVYeVjhu1VD1C3bHOoyRg
+const CLIENT_ID =
+"308840508820-b3qjh155tuj3jl53fqudm2aadk0omm8s.apps.googleusercontent.com";
 
 
-// =====================================================
-// SECRET KEY
-// =====================================================
-
-const SECRET_KEY = "QR12345";
+const SPREADSHEET_ID =
+"19CzQLHAihdyNl51W4nzcfzlYGs5V6n1PcOxCWwN-xRg";
 
 
-let scanning = true;
-let processing = false;
+const SHEET_NAME = "Sheet1";
+
+
+const SHEETS_SCOPE =
+"https://www.googleapis.com/auth/spreadsheets";
+
+
+let accessToken = null;
+
+let tokenClient = null;
+
+let scanner = null;
+
+let scanning = false;
+
+let saving = false;
 
 
 // =====================================================
 // MESSAGE
 // =====================================================
 
-function showMessage(text, type) {
+function message(text, type = "info") {
 
-  const msg = document.getElementById("message");
+  const box =
+    document.getElementById("message");
 
-  msg.innerHTML = text;
+  box.innerHTML = text;
 
-  msg.className = type || "";
+  box.className = type;
+
+}
+
+
+// =====================================================
+// GOOGLE OAUTH INITIALIZE
+// =====================================================
+
+window.onload = function () {
+
+  if (
+    typeof google === "undefined" ||
+    !google.accounts ||
+    !google.accounts.oauth2
+  ) {
+
+    message(
+      "❌ Google Login load नहीं हुआ। Internet check करें।",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  tokenClient =
+    google.accounts.oauth2.initTokenClient({
+
+      client_id: CLIENT_ID,
+
+      scope: SHEETS_SCOPE,
+
+      callback: function (response) {
+
+        if (response.error) {
+
+          console.error(response);
+
+          message(
+            "❌ Google authorization failed",
+            "error"
+          );
+
+          return;
+        }
+
+
+        accessToken =
+          response.access_token;
+
+
+        document.getElementById("loginBtn")
+          .style.display = "none";
+
+
+        message(
+          "✅ Google Account Connected<br>📷 अब QR Scan करें",
+          "success"
+        );
+
+
+        startScanner();
+
+      }
+
+    });
+
+
+};
+
+
+// =====================================================
+// GOOGLE LOGIN BUTTON
+// =====================================================
+
+document.getElementById("loginBtn")
+  .addEventListener("click", function () {
+
+    if (!tokenClient) {
+
+      message(
+        "❌ Google Login अभी तैयार नहीं है। Page refresh करें।",
+        "error"
+      );
+
+      return;
+
+    }
+
+
+    tokenClient.requestAccessToken({
+      prompt: ""
+    });
+
+  });
+
+
+// =====================================================
+// START QR SCANNER
+// =====================================================
+
+function startScanner() {
+
+  if (scanner) {
+    return;
+  }
+
+
+  scanner =
+    new Html5Qrcode("reader");
+
+
+  const config = {
+
+    fps: 10,
+
+    qrbox: {
+      width: 280,
+      height: 280
+    },
+
+    aspectRatio: 1.0
+
+  };
+
+
+  scanner.start(
+
+    { facingMode: "environment" },
+
+    config,
+
+    onScanSuccess,
+
+    onScanFailure
+
+  )
+
+  .then(function () {
+
+    scanning = true;
+
+    message(
+      "📷 QR Code Scan करें...",
+      "info"
+    );
+
+  })
+
+  .catch(function (error) {
+
+    console.error(error);
+
+    message(
+      "❌ Camera start नहीं हुआ: " + error,
+      "error"
+    );
+
+  });
 
 }
 
@@ -105,148 +300,324 @@ function showMessage(text, type) {
 // QR SUCCESS
 // =====================================================
 
-function onScanSuccess(decodedText, decodedResult) {
+async function onScanSuccess(decodedText, decodedResult) {
 
-  // एक ही QR को बार-बार process होने से रोकें
-  if (!scanning || processing) {
+  if (!scanning || saving) {
     return;
   }
 
+
+  saving = true;
+
   scanning = false;
-  processing = true;
 
 
-  showMessage(
-    "⏳ QR मिला... Google Sheet में save हो रहा है...",
-    ""
+  message(
+    "⏳ QR पढ़ लिया गया... Google Sheet में entry हो रही है...",
+    "info"
   );
 
 
-  // ===================================================
-  // REQUEST URL
-  // ===================================================
+  try {
 
-  const url =
-    API_URL +
-    "?key=" +
-    encodeURIComponent(SECRET_KEY) +
-    "&data=" +
-    encodeURIComponent(decodedText);
+    const row =
+      convertQRToRow(decodedText);
 
 
-  // ===================================================
-  // DIRECT REQUEST
-  // Image request CORS को bypass करता है
-  // ===================================================
+    console.log("QR DATA:", decodedText);
 
-  const request = new Image();
-
-  let finished = false;
+    console.log("SHEET ROW:", row);
 
 
-  function finish(success) {
-
-    if (finished) {
-      return;
-    }
-
-    finished = true;
+    await saveToGoogleSheet(row);
 
 
-    if (success) {
-
-      showMessage(
-        "✅ Entry Successfully Save हो गई",
-        "success"
-      );
-
-      beep();
+    message(
+      "✅ Entry Successfully Save हो गई",
+      "success"
+    );
 
 
-      // 2 second बाद अगला scan
-      setTimeout(function() {
+    beep();
 
-        processing = false;
-        scanning = true;
 
-        showMessage(
-          "📷 अगला QR Code Scan करें...",
-          ""
-        );
+    setTimeout(function () {
 
-      }, 2000);
+      saving = false;
 
-    }
-
-    else {
-
-      processing = false;
       scanning = true;
 
-      showMessage(
-        "⚠️ Data भेजने में समस्या हुई। फिर से QR Scan करें।",
-        "error"
+      message(
+        "📷 अगला QR Code Scan करें...",
+        "info"
       );
-
-    }
-
-  }
-
-
-  // Request successfully load
-  request.onload = function() {
-
-    finish(true);
-
-  };
-
-
-  // Network error
-  request.onerror = function() {
-
-    // Google Apps Script कई बार redirect करता है।
-    // इसलिए थोड़ी देर देकर success मान रहे हैं।
-
-    setTimeout(function() {
-
-      finish(true);
 
     }, 1500);
 
-  };
+
+  }
+
+  catch (error) {
+
+    console.error(error);
 
 
-  // Request भेजें
-  request.src = url;
+    message(
+      "❌ Entry Save नहीं हुई<br>" +
+      error.message,
+      "error"
+    );
 
 
-  // ===================================================
-  // SAFETY TIMEOUT
-  // ===================================================
+    setTimeout(function () {
 
-  setTimeout(function() {
+      saving = false;
 
-    if (!finished) {
+      scanning = true;
 
-      // Request भेज दिया गया है,
-      // इसलिए scanner को फिर से चालू करें।
+      message(
+        "📷 फिर से QR Code Scan करें...",
+        "info"
+      );
 
-      finish(true);
+    }, 3000);
 
-    }
-
-  }, 5000);
+  }
 
 }
 
 
 // =====================================================
-// QR SCAN FAILURE
+// QR → SHEET ROW
 // =====================================================
 
-function onScanFailure(error) {
+function convertQRToRow(qrText) {
 
-  // लगातार scanning के दौरान errors ignore करें
+  let data = null;
+
+
+  // -----------------------------------------------
+  // JSON QR
+  // -----------------------------------------------
+
+  try {
+
+    data = JSON.parse(qrText);
+
+  }
+
+  catch (e) {
+
+    data = null;
+
+  }
+
+
+  // -----------------------------------------------
+  // अगर QR JSON है
+  // -----------------------------------------------
+
+  if (
+    data &&
+    typeof data === "object"
+  ) {
+
+    return [
+
+      data.date || getToday(),
+
+      data.awb ||
+      data.AWB ||
+      data.article ||
+      data.articleNo ||
+      "",
+
+      data.name ||
+      data.NAME ||
+      "",
+
+      data.destination ||
+      data.DESTINATION ||
+      "",
+
+      data.articleNo ||
+      data.article_no ||
+      data.article ||
+      "",
+
+      data.weight ||
+      data.WEIGHT ||
+      "",
+
+      data.mobile ||
+      data.mobileNo ||
+      data.mobile_no ||
+      "",
+
+      data.order ||
+      data.orderNo ||
+      data.order_no ||
+      "",
+
+      data.live ||
+      data.liveNo ||
+      data.live_no ||
+      "",
+
+      data.courier ||
+      ""
+
+    ];
+
+  }
+
+
+  // -----------------------------------------------
+  // अगर QR JSON नहीं है
+  // -----------------------------------------------
+
+  // पूरा QR text AWB column में जाएगा
+
+  return [
+
+    getToday(),
+
+    qrText,
+
+    "",
+
+    "",
+
+    "",
+
+    "",
+
+    "",
+
+    "",
+
+    "",
+
+    ""
+
+  ];
+
+}
+
+
+// =====================================================
+// SAVE DIRECTLY TO GOOGLE SHEETS API
+// =====================================================
+
+async function saveToGoogleSheet(row) {
+
+
+  if (!accessToken) {
+
+    throw new Error(
+      "Google Account connected नहीं है।"
+    );
+
+  }
+
+
+  const range =
+    encodeURIComponent(
+      SHEET_NAME + "!A:J"
+    );
+
+
+  const url =
+    "https://sheets.googleapis.com/v4/spreadsheets/" +
+    SPREADSHEET_ID +
+    "/values/" +
+    range +
+    ":append" +
+    "?valueInputOption=USER_ENTERED" +
+    "&insertDataOption=INSERT_ROWS";
+
+
+  const response =
+    await fetch(url, {
+
+      method: "POST",
+
+      headers: {
+
+        "Authorization":
+          "Bearer " + accessToken,
+
+        "Content-Type":
+          "application/json"
+
+      },
+
+      body: JSON.stringify({
+
+        majorDimension: "ROWS",
+
+        values: [
+          row
+        ]
+
+      })
+
+    });
+
+
+  const result =
+    await response.json();
+
+
+  if (!response.ok) {
+
+    console.error(
+      "Google Sheets API Error:",
+      result
+    );
+
+
+    // Token expire हो गया हो
+    if (
+      response.status === 401 ||
+      response.status === 403
+    ) {
+
+      accessToken = null;
+
+    }
+
+
+    throw new Error(
+      result.error?.message ||
+      "Google Sheets API Error"
+    );
+
+  }
+
+
+  console.log(
+    "Google Sheet Response:",
+    result
+  );
+
+
+  return result;
+
+}
+
+
+// =====================================================
+// TODAY
+// =====================================================
+
+function getToday() {
+
+  const now = new Date();
+
+  return now.toLocaleDateString(
+    "en-GB"
+  );
 
 }
 
@@ -263,32 +634,44 @@ function beep() {
       window.AudioContext ||
       window.webkitAudioContext;
 
+
     const audio =
       new AudioContext();
+
 
     const oscillator =
       audio.createOscillator();
 
+
     const gain =
       audio.createGain();
+
 
     oscillator.connect(gain);
 
     gain.connect(audio.destination);
 
-    oscillator.frequency.value = 900;
 
-    gain.gain.value = 0.2;
+    oscillator.frequency.value =
+      900;
+
+
+    gain.gain.value =
+      0.2;
+
 
     oscillator.start();
+
 
     oscillator.stop(
       audio.currentTime + 0.15
     );
 
-  } catch (e) {
+  }
 
-    // Audio error ignore
+  catch (e) {
+
+    console.log(e);
 
   }
 
@@ -296,38 +679,14 @@ function beep() {
 
 
 // =====================================================
-// START SCANNER
+// SCAN FAILURE
 // =====================================================
 
-const scanner =
-  new Html5QrcodeScanner(
+function onScanFailure(error) {
 
-    "reader",
+  // Continuous scanning में errors ignore करें
 
-    {
-
-      fps: 15,
-
-      qrbox: {
-        width: 280,
-        height: 280
-      },
-
-      rememberLastUsedCamera: true,
-
-      aspectRatio: 1.0
-
-    },
-
-    false
-
-  );
-
-
-scanner.render(
-  onScanSuccess,
-  onScanFailure
-);
+}
 
 </script>
 
