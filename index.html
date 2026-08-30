@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 
 <html>
@@ -51,7 +50,7 @@ h2 {
 <div id="reader"></div>
 
 <div id="message">
-  QR Code Scan करें...
+QR Code Scan करें...
 </div>
 
 
@@ -74,6 +73,7 @@ const SECRET_KEY = "QR12345";
 
 
 let scanning = true;
+let currentIframe = null;
 
 
 // ========================================
@@ -91,8 +91,6 @@ function onScanSuccess(decodedText, decodedResult) {
     "⏳ Google Sheet में data save हो रहा है...";
 
 
-  // URL बनाएं
-
   const url =
     API_URL +
     "?key=" +
@@ -101,92 +99,28 @@ function onScanSuccess(decodedText, decodedResult) {
     encodeURIComponent(decodedText);
 
 
+  // ========================================
   // Hidden iframe
+  // ========================================
 
   const iframe =
     document.createElement("iframe");
 
   iframe.style.display = "none";
 
+  currentIframe = iframe;
+
   document.body.appendChild(iframe);
 
 
   // ========================================
-  // Apps Script response पकड़ना
+  // Google Apps Script से message प्राप्त करें
   // ========================================
 
-  iframe.onload = function() {
-
-    try {
-
-      const response =
-        iframe.contentDocument.body.innerText ||
-        iframe.contentWindow.document.body.innerText;
-
-
-      console.log(
-        "Google Apps Script Response:",
-        response
-      );
-
-
-      if (
-        response.includes("SUCCESS")
-      ) {
-
-        document.getElementById("message").innerHTML =
-          "✅ Entry Successfully Save हो गई";
-
-        beep();
-
-      } else {
-
-        document.getElementById("message").innerHTML =
-          "❌ Entry Save नहीं हुई<br><small>" +
-          response +
-          "</small>";
-
-        console.log(
-          "Google Apps Script Error:",
-          response
-        );
-
-      }
-
-    }
-
-    catch(error) {
-
-      console.log(
-        "Response Read Error:",
-        error
-      );
-
-      document.getElementById("message").innerHTML =
-        "⚠️ Server response verify नहीं हो सका";
-
-    }
-
-
-    // ========================================
-    // अगला QR scan
-    // ========================================
-
-    setTimeout(function() {
-
-      scanning = true;
-
-      document.getElementById("message").innerHTML =
-        "📷 अगला QR Code Scan करें...";
-
-
-      if (iframe.parentNode) {
-        iframe.parentNode.removeChild(iframe);
-      }
-
-    }, 2500);
-
-  };
+  window.addEventListener(
+    "message",
+    handleServerResponse
+  );
 
 
   // Request भेजें
@@ -197,12 +131,105 @@ function onScanSuccess(decodedText, decodedResult) {
 
 
 // ========================================
+// Server Response
+// ========================================
+
+function handleServerResponse(event) {
+
+  // केवल अपने iframe का response स्वीकार करें
+
+  if (
+    !currentIframe ||
+    event.source !== currentIframe.contentWindow
+  ) {
+    return;
+  }
+
+
+  const response = event.data;
+
+
+  console.log(
+    "Google Apps Script Response:",
+    response
+  );
+
+
+  // ========================================
+  // SUCCESS
+  // ========================================
+
+  if (response === "SUCCESS") {
+
+    document.getElementById("message").innerHTML =
+      "✅ Entry Successfully Save हो गई";
+
+    beep();
+
+  }
+
+
+  // ========================================
+  // ERROR
+  // ========================================
+
+  else if (
+    typeof response === "string" &&
+    response.startsWith("ERROR:")
+  ) {
+
+    document.getElementById("message").innerHTML =
+      "❌ Entry Save नहीं हुई<br><small>" +
+      response +
+      "</small>";
+
+  }
+
+
+  // ========================================
+  // Cleanup
+  // ========================================
+
+  setTimeout(function() {
+
+    scanning = true;
+
+    document.getElementById("message").innerHTML =
+      "📷 अगला QR Code Scan करें...";
+
+
+    window.removeEventListener(
+      "message",
+      handleServerResponse
+    );
+
+
+    if (
+      currentIframe &&
+      currentIframe.parentNode
+    ) {
+
+      currentIframe.parentNode.removeChild(
+        currentIframe
+      );
+
+    }
+
+
+    currentIframe = null;
+
+  }, 2500);
+
+}
+
+
+// ========================================
 // Scan Failure
 // ========================================
 
 function onScanFailure(error) {
 
-  // scanning errors ignore करें
+  // Scanning errors ignore करें
 
 }
 
@@ -243,6 +270,7 @@ function beep() {
 
 
     oscillator.start();
+
 
     oscillator.stop(
       audioContext.currentTime + 0.15
@@ -296,4 +324,3 @@ scanner.render(
 </body>
 
 </html>
-```
