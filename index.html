@@ -113,44 +113,39 @@ function onScanSuccess(decodedText, decodedResult) {
 
   scanning = false;
 
-
   document.getElementById("message").innerHTML =
-    "⏳ Data Google Sheet में save हो रहा है...";
+    "⏳ Google Sheet में data save हो रहा है...";
 
 
-  // Data form में डालें
-
-  document.getElementById("keyInput").value =
-    SECRET_KEY;
-
-  document.getElementById("dataInput").value =
-    decodedText;
-
-
-  // Form को Apps Script पर भेजें
-
-  const form =
-    document.getElementById("sendForm");
-
-  form.action = API_URL;
-
-  form.submit();
+  const url =
+    API_URL +
+    "?key=" +
+    encodeURIComponent(SECRET_KEY) +
+    "&data=" +
+    encodeURIComponent(decodedText);
 
 
-  // Beep
+  // Hidden iframe
+  const iframe =
+    document.createElement("iframe");
 
-  beep();
+  iframe.style.display = "none";
+
+  iframe.src = url;
+
+  document.body.appendChild(iframe);
 
 
-  // थोड़ी देर बाद अगला QR
+  // Request को process होने का समय दें
 
   setTimeout(function() {
 
     document.getElementById("message").innerHTML =
       "✅ Entry Successfully Save हो गई";
 
+    beep();
 
-  }, 1200);
+  }, 2000);
 
 
   setTimeout(function() {
@@ -160,10 +155,14 @@ function onScanSuccess(decodedText, decodedResult) {
     document.getElementById("message").innerHTML =
       "📷 अगला QR Code Scan करें...";
 
-  }, 2500);
+
+    if (iframe.parentNode) {
+      iframe.parentNode.removeChild(iframe);
+    }
+
+  }, 3500);
 
 }
-
 
 // ========================================
 // Scan Failure
