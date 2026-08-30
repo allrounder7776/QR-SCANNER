@@ -38,12 +38,6 @@ h2 {
   font-weight: bold;
 }
 
-button {
-  font-size: 17px;
-  padding: 12px 20px;
-  margin: 10px;
-}
-
 </style>
 
 </head>
@@ -60,20 +54,48 @@ button {
 </div>
 
 
+<!-- Hidden form -->
+
+<form
+  id="sendForm"
+  method="POST"
+  target="hiddenFrame"
+  style="display:none;">
+
+  <input
+    type="hidden"
+    name="key"
+    id="keyInput">
+
+  <input
+    type="hidden"
+    name="data"
+    id="dataInput">
+
+</form>
+
+
+<iframe
+  name="hiddenFrame"
+  id="hiddenFrame"
+  style="display:none;">
+</iframe>
+
+
 <script>
 
 
-// ======================================
-// यहाँ अपना Apps Script Web App URL डालें
-// ======================================
+// ========================================
+// आपका Google Apps Script Web App URL
+// ========================================
 
 const API_URL =
-"https://script.google.com/macros/s/XXXXXXXXXXXX/exec";
+"https://script.google.com/macros/s/AKfycbzXkNtamEPytizcKsj3-fnYwiB4zpN5RtqVxIYH9aD74vOw4nI1p2vieCQPgveNs2uL/exec";
 
 
-// ======================================
-// अपना Secret Key डालें
-// ======================================
+// ========================================
+// Secret Key
+// ========================================
 
 const SECRET_KEY = "QR12345";
 
@@ -81,9 +103,9 @@ const SECRET_KEY = "QR12345";
 let scanning = true;
 
 
-// ======================================
-// QR Scan Successful
-// ======================================
+// ========================================
+// QR Scan Success
+// ========================================
 
 function onScanSuccess(decodedText, decodedResult) {
 
@@ -91,117 +113,106 @@ function onScanSuccess(decodedText, decodedResult) {
 
   scanning = false;
 
+
   document.getElementById("message").innerHTML =
     "⏳ Data Google Sheet में save हो रहा है...";
 
 
-  // QR data को URL encode करना
-  const encodedData =
-    encodeURIComponent(decodedText);
+  // Data form में डालें
+
+  document.getElementById("keyInput").value =
+    SECRET_KEY;
+
+  document.getElementById("dataInput").value =
+    decodedText;
 
 
-  const url =
-    API_URL +
-    "?key=" +
-    encodeURIComponent(SECRET_KEY) +
-    "&data=" +
-    encodedData;
+  // Form को Apps Script पर भेजें
+
+  const form =
+    document.getElementById("sendForm");
+
+  form.action = API_URL;
+
+  form.submit();
 
 
-  // Apps Script को request भेजना
+  // Beep
 
-  fetch(url)
+  beep();
 
-    .then(response => response.text())
 
-    .then(result => {
+  // थोड़ी देर बाद अगला QR
 
-      if (result.includes("SUCCESS")) {
+  setTimeout(function() {
 
-        document.getElementById("message").innerHTML =
-          "✅ Entry Successfully Save हो गई";
+    document.getElementById("message").innerHTML =
+      "✅ Entry Successfully Save हो गई";
 
-        // Beep
-        beep();
 
-        setTimeout(function() {
+  }, 1200);
 
-          scanning = true;
 
-          document.getElementById("message").innerHTML =
-            "📷 अगला QR Code Scan करें...";
+  setTimeout(function() {
 
-        }, 1500);
+    scanning = true;
 
-      }
+    document.getElementById("message").innerHTML =
+      "📷 अगला QR Code Scan करें...";
 
-      else {
-
-        document.getElementById("message").innerHTML =
-          "❌ Error: " + result;
-
-        setTimeout(function() {
-          scanning = true;
-        }, 2500);
-
-      }
-
-    })
-
-    .catch(error => {
-
-      document.getElementById("message").innerHTML =
-        "❌ Network Error";
-
-      console.log(error);
-
-      setTimeout(function() {
-        scanning = true;
-      }, 2500);
-
-    });
+  }, 2500);
 
 }
 
 
-// ======================================
-// QR Scan Failure
-// ======================================
+// ========================================
+// Scan Failure
+// ========================================
 
 function onScanFailure(error) {
 
-  // लगातार scanning के दौरान errors ignore करें
+  // Scanning के दौरान errors ignore करें
 
 }
 
 
-// ======================================
-// Beep Sound
-// ======================================
+// ========================================
+// Beep
+// ========================================
 
 function beep() {
 
   try {
 
     const audioContext =
-      new (window.AudioContext ||
-           window.webkitAudioContext)();
+      new (
+        window.AudioContext ||
+        window.webkitAudioContext
+      )();
+
 
     const oscillator =
       audioContext.createOscillator();
 
+
     const gain =
       audioContext.createGain();
 
+
     oscillator.connect(gain);
 
-    gain.connect(audioContext.destination);
+    gain.connect(
+      audioContext.destination
+    );
+
 
     oscillator.frequency.value = 800;
 
     gain.gain.value = 0.2;
 
+
     oscillator.start();
+
 
     oscillator.stop(
       audioContext.currentTime + 0.15
@@ -218,9 +229,9 @@ function beep() {
 }
 
 
-// ======================================
-// Scanner Start
-// ======================================
+// ========================================
+// Start Scanner
+// ========================================
 
 const scanner =
   new Html5QrcodeScanner(
@@ -232,8 +243,11 @@ const scanner =
       fps: 10,
 
       qrbox: {
+
         width: 250,
+
         height: 250
+
       },
 
       rememberLastUsedCamera: true
