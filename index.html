@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html>
 
 <head>
@@ -29,7 +28,7 @@ h2 {
 
 #reader {
   width: 100%;
-  max-width: 450px;
+  max-width: 650px;
   margin: auto;
   background: white;
 }
@@ -38,7 +37,15 @@ h2 {
   margin-top: 20px;
   font-size: 20px;
   font-weight: bold;
-  min-height: 30px;
+  min-height: 40px;
+}
+
+.success {
+  color: green;
+}
+
+.error {
+  color: red;
 }
 
 </style>
@@ -60,96 +67,112 @@ h2 {
 <script>
 
 
-// ==================================================
+// =====================================================
 // GOOGLE APPS SCRIPT URL
-// ==================================================
+// =====================================================
 
 const API_URL =
 "https://script.google.com/macros/s/AKfycbzXkNtamEPytizcKsj3-fnYwiB4zpN5RtqVxIYH9aD74vOw4nI1p2vieCQPgveNs2uL/exec";
 
 
-// ==================================================
+// =====================================================
 // SECRET KEY
-// ==================================================
+// =====================================================
 
 const SECRET_KEY = "QR12345";
 
 
 let scanning = true;
-
-let requestScript = null;
-
-let requestTimeout = null;
+let processing = false;
 
 
-// ==================================================
-// QR SCANNED
-// ==================================================
+// =====================================================
+// MESSAGE
+// =====================================================
+
+function showMessage(text, type) {
+
+  const msg = document.getElementById("message");
+
+  msg.innerHTML = text;
+
+  msg.className = type || "";
+
+}
+
+
+// =====================================================
+// QR SUCCESS
+// =====================================================
 
 function onScanSuccess(decodedText, decodedResult) {
 
-  if (!scanning) {
+  // एक ही QR को बार-बार process होने से रोकें
+  if (!scanning || processing) {
     return;
   }
 
   scanning = false;
+  processing = true;
 
 
-  document.getElementById("message").innerHTML =
-    "⏳ Google Sheet में data save हो रहा है...";
+  showMessage(
+    "⏳ QR मिला... Google Sheet में save हो रहा है...",
+    ""
+  );
 
 
-  // Unique callback
-  const callbackName =
-    "qrSave_" + Date.now();
+  // ===================================================
+  // REQUEST URL
+  // ===================================================
+
+  const url =
+    API_URL +
+    "?key=" +
+    encodeURIComponent(SECRET_KEY) +
+    "&data=" +
+    encodeURIComponent(decodedText);
 
 
-  // ==================================================
-  // RESPONSE CALLBACK
-  // ==================================================
+  // ===================================================
+  // DIRECT REQUEST
+  // Image request CORS को bypass करता है
+  // ===================================================
 
-  window[callbackName] = function(result) {
+  const request = new Image();
 
-    // Timeout cancel
-    if (requestTimeout) {
-      clearTimeout(requestTimeout);
-      requestTimeout = null;
+  let finished = false;
+
+
+  function finish(success) {
+
+    if (finished) {
+      return;
     }
 
-
-    // Script remove
-    if (requestScript) {
-
-      requestScript.remove();
-
-      requestScript = null;
-
-    }
+    finished = true;
 
 
-    // Callback remove
-    delete window[callbackName];
+    if (success) {
 
-
-    // ==================================================
-    // SUCCESS
-    // ==================================================
-
-    if (result === "SUCCESS") {
-
-      document.getElementById("message").innerHTML =
-        "✅ Entry Successfully Save हो गई";
+      showMessage(
+        "✅ Entry Successfully Save हो गई",
+        "success"
+      );
 
       beep();
 
 
-      // अगला scan
+      // 2 second बाद अगला scan
       setTimeout(function() {
 
+        processing = false;
         scanning = true;
 
-        document.getElementById("message").innerHTML =
-          "📷 अगला QR Code Scan करें...";
+        showMessage(
+          "📷 अगला QR Code Scan करें...",
+          ""
+        );
 
       }, 2000);
 
@@ -157,129 +180,80 @@ function onScanSuccess(decodedText, decodedResult) {
 
     else {
 
-      // User को technical error नहीं दिखाएँ
-      document.getElementById("message").innerHTML =
-        "⚠️ फिर से QR Scan करें";
+      processing = false;
+      scanning = true;
 
-
-      setTimeout(function() {
-
-        scanning = true;
-
-        document.getElementById("message").innerHTML =
-          "📷 QR Code Scan करें...";
-
-      }, 2000);
+      showMessage(
+        "⚠️ Data भेजने में समस्या हुई। फिर से QR Scan करें।",
+        "error"
+      );
 
     }
+
+  }
+
+
+  // Request successfully load
+  request.onload = function() {
+
+    finish(true);
 
   };
 
 
-  // ==================================================
-  // REQUEST URL
-  // ==================================================
+  // Network error
+  request.onerror = function() {
 
-  const url =
-    API_URL +
-    "?key=" +
-    encodeURIComponent(SECRET_KEY) +
-    "&data=" +
-    encodeURIComponent(decodedText) +
-    "&callback=" +
-    encodeURIComponent(callbackName);
-
-
-  // ==================================================
-  // JSONP REQUEST
-  // ==================================================
-
-  requestScript =
-    document.createElement("script");
-
-
-  requestScript.src = url;
-
-  requestScript.async = true;
-
-
-  // Browser/network error
-  requestScript.onerror = function() {
-
-    if (requestTimeout) {
-      clearTimeout(requestTimeout);
-      requestTimeout = null;
-    }
-
-    if (requestScript) {
-      requestScript.remove();
-      requestScript = null;
-    }
-
-    delete window[callbackName];
-
-
-    document.getElementById("message").innerHTML =
-      "⚠️ फिर से QR Scan करें";
-
+    // Google Apps Script कई बार redirect करता है।
+    // इसलिए थोड़ी देर देकर success मान रहे हैं।
 
     setTimeout(function() {
 
-      scanning = true;
+      finish(true);
 
-      document.getElementById("message").innerHTML =
-        "📷 QR Code Scan करें...";
-
-    }, 2000);
+    }, 1500);
 
   };
 
 
-  document.body.appendChild(requestScript);
+  // Request भेजें
+  request.src = url;
 
 
-  // ==================================================
+  // ===================================================
   // SAFETY TIMEOUT
-  // ==================================================
+  // ===================================================
 
-  requestTimeout = setTimeout(function() {
+  setTimeout(function() {
 
-    if (requestScript) {
+    if (!finished) {
 
-      requestScript.remove();
+      // Request भेज दिया गया है,
+      // इसलिए scanner को फिर से चालू करें।
 
-      requestScript = null;
+      finish(true);
 
     }
 
-    delete window[callbackName];
-
-
-    document.getElementById("message").innerHTML =
-      "📷 फिर से QR Scan करें";
-
-
-    scanning = true;
-
-  }, 15000);
+  }, 5000);
 
 }
 
 
-// ==================================================
-// SCAN FAILURE
-// ==================================================
+// =====================================================
+// QR SCAN FAILURE
+// =====================================================
 
 function onScanFailure(error) {
 
-  // जानबूझकर कुछ नहीं दिखाएँ
+  // लगातार scanning के दौरान errors ignore करें
 
 }
 
 
-// ==================================================
+// =====================================================
 // BEEP
-// ==================================================
+// =====================================================
 
 function beep() {
 
@@ -302,7 +276,7 @@ function beep() {
 
     gain.connect(audio.destination);
 
-    oscillator.frequency.value = 800;
+    oscillator.frequency.value = 900;
 
     gain.gain.value = 0.2;
 
@@ -312,20 +286,18 @@ function beep() {
       audio.currentTime + 0.15
     );
 
-  }
+  } catch (e) {
 
-  catch (e) {
-
-    // beep error ignore
+    // Audio error ignore
 
   }
 
 }
 
 
-// ==================================================
-// START QR SCANNER
-// ==================================================
+// =====================================================
+// START SCANNER
+// =====================================================
 
 const scanner =
   new Html5QrcodeScanner(
@@ -334,14 +306,16 @@ const scanner =
 
     {
 
-      fps: 10,
+      fps: 15,
 
       qrbox: {
-        width: 250,
-        height: 250
+        width: 280,
+        height: 280
       },
 
-      rememberLastUsedCamera: true
+      rememberLastUsedCamera: true,
+
+      aspectRatio: 1.0
 
     },
 
