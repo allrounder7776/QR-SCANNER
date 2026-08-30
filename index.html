@@ -76,9 +76,7 @@ button {
 }
 
 </style>
-
 </head>
-
 
 <body>
 
@@ -98,9 +96,7 @@ button {
 Diagnostic शुरू नहीं हुआ...
 </div>
 
-
 <script>
-
 
 // =====================================================
 // GOOGLE SETTINGS
@@ -109,14 +105,11 @@ Diagnostic शुरू नहीं हुआ...
 const CLIENT_ID =
 "308840508820-b3qjh155tuj3jl53fqudm2aadk0omm8s.apps.googleusercontent.com";
 
-
 const SPREADSHEET_ID =
 "19CzQLHAihdyNl51W4nzcfzlYGs5V6n1PcOxCWwN-xRg";
 
-
 const SHEET_NAME =
 "Sheet1";
-
 
 const SHEETS_SCOPE =
 "https://www.googleapis.com/auth/spreadsheets";
@@ -136,6 +129,14 @@ let scanning = false;
 
 let saving = false;
 
+// =====================================================
+// IMPORTANT
+// NEW ENTRY ALWAYS STARTS FROM ROW 2
+// THEN ROW 3, 4, 5, 6...
+// =====================================================
+
+let nextRow = 2;
+
 
 // =====================================================
 // MESSAGE
@@ -150,7 +151,6 @@ function showMessage(text, type) {
 
   box.className =
     type || "info";
-
 }
 
 
@@ -167,7 +167,6 @@ function debug(text) {
 
   box.innerText +=
     "\n" + text;
-
 }
 
 
@@ -711,6 +710,10 @@ async function onScanSuccess(
     );
 
 
+    // IMPORTANT:
+    // SAVE CURRENT ROW
+    // ROW 2 FIRST
+    // THEN 3, 4, 5...
     const result =
       await saveToGoogleSheet(
         row
@@ -718,7 +721,7 @@ async function onScanSuccess(
 
 
     debug(
-      "API APPEND: SUCCESS"
+      "API SAVE: SUCCESS"
     );
 
 
@@ -746,8 +749,8 @@ async function onScanSuccess(
 
     showMessage(
       "✅ Entry Successfully Save हो गई<br>" +
-      "Updated Rows: " +
-      result.updates.updatedRows,
+      "Row No: " +
+      (nextRow - 1),
       "success"
     );
 
@@ -945,9 +948,7 @@ function convertQRToRow(qrText) {
 // SAVE TO GOOGLE SHEETS
 // =====================================================
 
-async function saveToGoogleSheet(
-  row
-) {
+async function saveToGoogleSheet(row) {
 
   if (!accessToken) {
 
@@ -958,15 +959,41 @@ async function saveToGoogleSheet(
   }
 
 
+  // ================================================
+  // VERY IMPORTANT
+  //
+  // nextRow starts from 2.
+  //
+  // First scan  -> Row 2
+  // Second scan -> Row 3
+  // Third scan  -> Row 4
+  // Fourth scan -> Row 5
+  //
+  // Existing rows like 300/450 are NOT used.
+  // ================================================
+
   debug(
-    "Preparing Sheets API append..."
+    "Preparing Sheets API save..."
   );
+
+
+  debug(
+    "Saving to row: " +
+    nextRow
+  );
+
+
+  const rowToSave =
+    nextRow;
 
 
   const range =
     encodeURIComponent(
       SHEET_NAME +
-      "!A:J"
+      "!A" +
+      rowToSave +
+      ":J" +
+      rowToSave
     );
 
 
@@ -975,28 +1002,20 @@ async function saveToGoogleSheet(
     SPREADSHEET_ID +
     "/values/" +
     range +
-    ":append" +
-
-    "?valueInputOption=USER_ENTERED" +
-
-    "&insertDataOption=INSERT_ROWS" +
-
-    "&includeValuesInResponse=true";
+    "?valueInputOption=USER_ENTERED";
 
 
   debug(
-    "Sending POST request..."
+    "Sending PUT request..."
   );
 
 
   const response =
     await fetch(
-
       url,
-
       {
 
-        method: "POST",
+        method: "PUT",
 
         headers: {
 
@@ -1016,14 +1035,11 @@ async function saveToGoogleSheet(
               "ROWS",
 
             values:
-              [
-                row
-              ]
+              [row]
 
           })
 
       }
-
     );
 
 
@@ -1043,10 +1059,7 @@ async function saveToGoogleSheet(
 
 
   debug(
-    text.substring(
-      0,
-      1500
-    )
+    text.substring(0, 1500)
   );
 
 
@@ -1056,9 +1069,7 @@ async function saveToGoogleSheet(
   try {
 
     result =
-      JSON.parse(
-        text
-      );
+      JSON.parse(text);
 
   }
 
@@ -1071,19 +1082,12 @@ async function saveToGoogleSheet(
   }
 
 
-  // ================================================
-  // API ERROR
-  // ================================================
+  if (!response.ok) {
 
-  if (
-    !response.ok
-  ) {
-
-    if (
-      response.status === 401
-    ) {
+    if (response.status === 401) {
 
       accessToken = null;
+
 
       document
         .getElementById("loginBtn")
@@ -1107,31 +1111,16 @@ async function saveToGoogleSheet(
   }
 
 
-  // ================================================
-  // UPDATE CHECK
-  // ================================================
-
-  if (
-    !result.updates
-  ) {
-
-    throw new Error(
-      "API response में updates नहीं मिला"
-    );
-
-  }
-
-
   const updatedRows =
     Number(
-      result.updates.updatedRows ||
+      result.updatedRows ||
       0
     );
 
 
   const updatedCells =
     Number(
-      result.updates.updatedCells ||
+      result.updatedCells ||
       0
     );
 
@@ -1148,7 +1137,47 @@ async function saveToGoogleSheet(
   }
 
 
-  return result;
+  // ================================================
+  // SUCCESS
+  //
+  // Current row successfully saved.
+  // Now move to the NEXT row.
+  // ================================================
+
+  nextRow =
+    rowToSave + 1;
+
+
+  debug(
+    "SAVE SUCCESS"
+  );
+
+
+  debug(
+    "Saved row: " +
+    rowToSave
+  );
+
+
+  debug(
+    "Next row will be: " +
+    nextRow
+  );
+
+
+  return {
+
+    updates: {
+
+      updatedRows:
+        updatedRows,
+
+      updatedCells:
+        updatedCells
+
+    }
+
+  };
 
 }
 
@@ -1242,5 +1271,4 @@ function onScanFailure(error) {
 </script>
 
 </body>
-
 </html>
