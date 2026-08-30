@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 
 <html>
@@ -54,39 +55,11 @@ h2 {
 </div>
 
 
-<!-- Hidden form -->
-
-<form
-  id="sendForm"
-  method="POST"
-  target="hiddenFrame"
-  style="display:none;">
-
-  <input
-    type="hidden"
-    name="key"
-    id="keyInput">
-
-  <input
-    type="hidden"
-    name="data"
-    id="dataInput">
-
-</form>
-
-
-<iframe
-  name="hiddenFrame"
-  id="hiddenFrame"
-  style="display:none;">
-</iframe>
-
-
 <script>
 
 
 // ========================================
-// आपका Google Apps Script Web App URL
+// Google Apps Script Web App URL
 // ========================================
 
 const API_URL =
@@ -113,9 +86,12 @@ function onScanSuccess(decodedText, decodedResult) {
 
   scanning = false;
 
+
   document.getElementById("message").innerHTML =
     "⏳ Google Sheet में data save हो रहा है...";
 
+
+  // URL बनाएं
 
   const url =
     API_URL +
@@ -126,43 +102,99 @@ function onScanSuccess(decodedText, decodedResult) {
 
 
   // Hidden iframe
+
   const iframe =
     document.createElement("iframe");
 
   iframe.style.display = "none";
 
-  iframe.src = url;
-
   document.body.appendChild(iframe);
 
 
-  // Request को process होने का समय दें
+  // ========================================
+  // Apps Script response पकड़ना
+  // ========================================
 
-  setTimeout(function() {
+  iframe.onload = function() {
 
-    document.getElementById("message").innerHTML =
-      "✅ Entry Successfully Save हो गई";
+    try {
 
-    beep();
-
-  }, 2000);
-
-
-  setTimeout(function() {
-
-    scanning = true;
-
-    document.getElementById("message").innerHTML =
-      "📷 अगला QR Code Scan करें...";
+      const response =
+        iframe.contentDocument.body.innerText ||
+        iframe.contentWindow.document.body.innerText;
 
 
-    if (iframe.parentNode) {
-      iframe.parentNode.removeChild(iframe);
+      console.log(
+        "Google Apps Script Response:",
+        response
+      );
+
+
+      if (
+        response.includes("SUCCESS")
+      ) {
+
+        document.getElementById("message").innerHTML =
+          "✅ Entry Successfully Save हो गई";
+
+        beep();
+
+      } else {
+
+        document.getElementById("message").innerHTML =
+          "❌ Entry Save नहीं हुई<br><small>" +
+          response +
+          "</small>";
+
+        console.log(
+          "Google Apps Script Error:",
+          response
+        );
+
+      }
+
     }
 
-  }, 3500);
+    catch(error) {
+
+      console.log(
+        "Response Read Error:",
+        error
+      );
+
+      document.getElementById("message").innerHTML =
+        "⚠️ Server response verify नहीं हो सका";
+
+    }
+
+
+    // ========================================
+    // अगला QR scan
+    // ========================================
+
+    setTimeout(function() {
+
+      scanning = true;
+
+      document.getElementById("message").innerHTML =
+        "📷 अगला QR Code Scan करें...";
+
+
+      if (iframe.parentNode) {
+        iframe.parentNode.removeChild(iframe);
+      }
+
+    }, 2500);
+
+  };
+
+
+  // Request भेजें
+
+  iframe.src = url;
 
 }
+
 
 // ========================================
 // Scan Failure
@@ -170,7 +202,7 @@ function onScanSuccess(decodedText, decodedResult) {
 
 function onScanFailure(error) {
 
-  // Scanning के दौरान errors ignore करें
+  // scanning errors ignore करें
 
 }
 
@@ -212,7 +244,6 @@ function beep() {
 
     oscillator.start();
 
-
     oscillator.stop(
       audioContext.currentTime + 0.15
     );
@@ -242,11 +273,8 @@ const scanner =
       fps: 10,
 
       qrbox: {
-
         width: 250,
-
         height: 250
-
       },
 
       rememberLastUsedCamera: true
@@ -263,9 +291,9 @@ scanner.render(
   onScanFailure
 );
 
-
 </script>
 
 </body>
 
 </html>
+```
