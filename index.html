@@ -12,6 +12,7 @@
 <script src="https://accounts.google.com/gsi/client"></script>
 
 <style>
+
 body {
   font-family: Arial, sans-serif;
   text-align: center;
@@ -49,20 +50,6 @@ button {
   word-break: break-word;
 }
 
-#debug {
-  margin: 15px auto;
-  max-width: 500px;
-  padding: 12px;
-  background: #111;
-  color: #00ff66;
-  text-align: left;
-  font-family: monospace;
-  font-size: 13px;
-  white-space: pre-wrap;
-  word-break: break-word;
-  border-radius: 6px;
-}
-
 .success {
   color: green;
 }
@@ -74,7 +61,9 @@ button {
 .info {
   color: #333;
 }
+
 </style>
+
 </head>
 
 <body>
@@ -91,9 +80,6 @@ button {
 पहले Google Account Connect करें
 </div>
 
-<div id="debug">
-Diagnostic शुरू नहीं हुआ...
-</div>
 
 <script>
 
@@ -119,12 +105,16 @@ const SHEETS_SCOPE =
 // =====================================================
 
 let accessToken = null;
+
 let tokenClient = null;
+
 let scanner = null;
+
 let scanning = false;
+
 let saving = false;
 
-// नई Entry Row
+// नई Entry की Row
 let nextRow = 2;
 
 
@@ -141,22 +131,7 @@ function showMessage(text, type) {
 
   box.className =
     type || "info";
-}
 
-
-// =====================================================
-// DEBUG
-// =====================================================
-
-function debug(text) {
-
-  console.log(text);
-
-  const box =
-    document.getElementById("debug");
-
-  box.innerText +=
-    "\n" + text;
 }
 
 
@@ -167,17 +142,6 @@ function debug(text) {
 window.addEventListener(
   "load",
   function () {
-
-    debug("Page loaded");
-
-    debug(
-      "Google library: " +
-      (
-        typeof google !== "undefined"
-          ? "LOADED"
-          : "NOT LOADED"
-      )
-    );
 
     if (
       typeof google === "undefined" ||
@@ -190,12 +154,10 @@ window.addEventListener(
         "error"
       );
 
-      debug(
-        "ERROR: Google OAuth library missing"
-      );
-
       return;
+
     }
+
 
     tokenClient =
       google.accounts.oauth2.initTokenClient({
@@ -211,9 +173,6 @@ window.addEventListener(
 
       });
 
-    debug(
-      "OAuth client initialized"
-    );
 
     showMessage(
       "🔐 Google Account Connect करें",
@@ -242,16 +201,15 @@ document
         );
 
         return;
+
       }
 
-      debug(
-        "Requesting Google access token..."
-      );
 
       showMessage(
         "⏳ Google authorization...",
         "info"
       );
+
 
       tokenClient.requestAccessToken({
 
@@ -269,15 +227,6 @@ document
 
 function handleTokenResponse(response) {
 
-  debug(
-    "OAuth response received"
-  );
-
-  console.log(
-    "OAuth Response:",
-    response
-  );
-
   if (response.error) {
 
     accessToken = null;
@@ -291,16 +240,10 @@ function handleTokenResponse(response) {
       "error"
     );
 
-    debug(
-      "OAuth ERROR: " +
-      (
-        response.error_description ||
-        response.error
-      )
-    );
-
     return;
+
   }
+
 
   if (!response.access_token) {
 
@@ -309,28 +252,26 @@ function handleTokenResponse(response) {
       "error"
     );
 
-    debug(
-      "ERROR: No access token"
-    );
-
     return;
+
   }
+
 
   accessToken =
     response.access_token;
 
-  debug(
-    "Access token received: YES"
-  );
 
   document
     .getElementById("loginBtn")
-    .style.display = "none";
+    .style.display =
+    "none";
+
 
   showMessage(
     "✅ Google Account Connected<br>⏳ Sheet access test हो रहा है...",
     "success"
   );
+
 
   testSheetAccess();
 
@@ -343,13 +284,10 @@ function handleTokenResponse(response) {
 
 async function testSheetAccess() {
 
-  debug(
-    "Testing Spreadsheet access..."
-  );
-
   const url =
     "https://sheets.googleapis.com/v4/spreadsheets/" +
     SPREADSHEET_ID;
+
 
   try {
 
@@ -357,30 +295,27 @@ async function testSheetAccess() {
       await fetch(
         url,
         {
+
           method: "GET",
 
           headers: {
+
             "Authorization":
               "Bearer " +
               accessToken
+
           }
+
         }
       );
+
 
     const text =
       await response.text();
 
-    debug(
-      "Spreadsheet HTTP: " +
-      response.status
-    );
-
-    debug(
-      "Spreadsheet response: " +
-      text.substring(0, 500)
-    );
 
     let result;
+
 
     try {
 
@@ -397,6 +332,7 @@ async function testSheetAccess() {
 
     }
 
+
     if (!response.ok) {
 
       throw new Error(
@@ -406,15 +342,14 @@ async function testSheetAccess() {
 
     }
 
-    debug(
-      "Spreadsheet access: OK"
-    );
 
     const sheets =
       result.sheets || [];
 
+
     let found =
       false;
+
 
     for (
       let i = 0;
@@ -425,10 +360,6 @@ async function testSheetAccess() {
       const title =
         sheets[i].properties?.title;
 
-      debug(
-        "Found sheet: " +
-        title
-      );
 
       if (
         title === SHEET_NAME
@@ -440,6 +371,7 @@ async function testSheetAccess() {
 
     }
 
+
     if (!found) {
 
       throw new Error(
@@ -448,39 +380,34 @@ async function testSheetAccess() {
 
     }
 
-    debug(
-      "Sheet1: FOUND"
-    );
 
     // =================================================
-    // IMPORTANT:
-    // LAST NAME के आधार पर नई ROW खोजेंगे
+    // LAST NAME के आधार पर नई ROW खोजें
     // =================================================
 
     await findNextEmptyRow();
+
 
     showMessage(
       "✅ Google Sheet Connected<br>📷 अब QR Scan करें",
       "success"
     );
 
+
     startScanner();
 
   }
+
 
   catch (error) {
 
     console.error(error);
 
+
     showMessage(
       "❌ Sheet access failed<br>" +
       error.message,
       "error"
-    );
-
-    debug(
-      "SHEET ERROR: " +
-      error.message
     );
 
   }
@@ -489,24 +416,30 @@ async function testSheetAccess() {
 
 
 // =====================================================
-// FIND NEXT ENTRY ROW BASED ON LAST NAME
+// FIND NEXT ENTRY ROW
+// =====================================================
+//
+// नई Entry हमेशा Column C में मौजूद
+// LAST NAME वाली Row के ठीक नीचे जाएगी.
+//
+// उदाहरण:
+//
+// C459 = Rahul
+// C460 = Amit
+// C461 = Mohit
+// C462 = खाली
+//
+// नई Entry = Row 462
+//
 // =====================================================
 
 async function findNextEmptyRow() {
-
-  debug(
-    "Finding NEXT Entry Row based on LAST Name in Column C..."
-  );
-
-  // ---------------------------------------------------
-  // सिर्फ Column C यानी NAME पढ़ेंगे
-  // C2:C
-  // ---------------------------------------------------
 
   const range =
     encodeURIComponent(
       SHEET_NAME + "!C2:C"
     );
+
 
   const url =
     "https://sheets.googleapis.com/v4/spreadsheets/" +
@@ -514,24 +447,32 @@ async function findNextEmptyRow() {
     "/values/" +
     range;
 
+
   const response =
     await fetch(
       url,
       {
+
         method: "GET",
 
         headers: {
+
           "Authorization":
             "Bearer " +
             accessToken
+
         }
+
       }
     );
+
 
   const text =
     await response.text();
 
+
   let result;
+
 
   try {
 
@@ -548,6 +489,7 @@ async function findNextEmptyRow() {
 
   }
 
+
   if (!response.ok) {
 
     throw new Error(
@@ -557,17 +499,17 @@ async function findNextEmptyRow() {
 
   }
 
+
   const values =
     result.values || [];
 
-  // ---------------------------------------------------
-  // Last Name वाली Row
-  // ---------------------------------------------------
 
+  // Default
   let lastNameRow = 1;
 
+
   // ---------------------------------------------------
-  // Column C में नीचे तक सभी values check करें
+  // Column C में आखिरी भरा हुआ Name खोजें
   // ---------------------------------------------------
 
   for (
@@ -582,11 +524,12 @@ async function findNextEmptyRow() {
         ? String(values[i][0]).trim()
         : "";
 
+
     if (name !== "") {
 
       // C2 = Row 2
       // C3 = Row 3
-      // etc.
+      // आदि...
 
       lastNameRow =
         i + 2;
@@ -595,9 +538,10 @@ async function findNextEmptyRow() {
 
   }
 
+
   // ---------------------------------------------------
-  // LAST NAME वाली Row के ठीक नीचे
-  // नई Entry जाएगी
+  // Last Name वाली Row के ठीक नीचे
+  // नई Entry
   // ---------------------------------------------------
 
   if (lastNameRow < 2) {
@@ -613,16 +557,6 @@ async function findNextEmptyRow() {
 
   }
 
-  debug(
-    "Last Name Row: " +
-    lastNameRow
-  );
-
-  debug(
-    "NEXT ENTRY ROW: " +
-    nextRow
-  );
-
 }
 
 
@@ -633,36 +567,42 @@ async function findNextEmptyRow() {
 function startScanner() {
 
   if (scanner) {
+
     return;
+
   }
 
-  debug(
-    "Starting camera..."
-  );
 
   scanner =
     new Html5Qrcode(
       "reader"
     );
 
+
   const config = {
 
     fps: 10,
 
     qrbox: {
+
       width: 280,
+
       height: 280
+
     },
 
     aspectRatio: 1.0
 
   };
 
+
   scanner
     .start(
       {
+
         facingMode:
           "environment"
+
       },
 
       config,
@@ -678,9 +618,6 @@ function startScanner() {
 
         scanning = true;
 
-        debug(
-          "Camera started: OK"
-        );
 
         showMessage(
           "📷 QR Code Scan करें...",
@@ -692,11 +629,6 @@ function startScanner() {
 
     .catch(
       function (error) {
-
-        debug(
-          "CAMERA ERROR: " +
-          error
-        );
 
         showMessage(
           "❌ Camera start नहीं हुआ<br>" +
@@ -728,29 +660,17 @@ async function onScanSuccess(
 
   }
 
+
   saving = true;
+
   scanning = false;
 
-  debug(
-    "=========================="
-  );
-
-  debug(
-    "QR SCANNED"
-  );
-
-  debug(
-    "QR DATA:"
-  );
-
-  debug(
-    decodedText
-  );
 
   showMessage(
     "⏳ QR पढ़ लिया गया...<br>Google Sheet में save हो रहा है...",
     "info"
   );
+
 
   try {
 
@@ -759,33 +679,19 @@ async function onScanSuccess(
         decodedText
       );
 
-    debug(
-      "ROW TO SAVE:"
-    );
-
-    debug(
-      JSON.stringify(row)
-    );
-
-    // -------------------------------------------------
-    // SAVE
-    // -------------------------------------------------
 
     await saveToGoogleSheet(
       row
     );
 
-    debug(
-      "API SAVE: SUCCESS"
-    );
 
     // -------------------------------------------------
-    // IMPORTANT:
-    // अब nextRow को नहीं बल्कि saved row को दिखाएँ
+    // Save हुई Row
     // -------------------------------------------------
 
     const savedRow =
       nextRow - 1;
+
 
     showMessage(
       "✅ Entry Successfully Save हो गई<br>" +
@@ -795,13 +701,17 @@ async function onScanSuccess(
       "success"
     );
 
+
     beep();
+
 
     setTimeout(
       function () {
 
         saving = false;
+
         scanning = true;
+
 
         showMessage(
           "📷 अगला QR Code Scan करें...",
@@ -814,17 +724,11 @@ async function onScanSuccess(
 
   }
 
+
   catch (error) {
 
     console.error(error);
 
-    debug(
-      "SAVE ERROR:"
-    );
-
-    debug(
-      error.message
-    );
 
     showMessage(
       "❌ Entry Save नहीं हुई<br><br>" +
@@ -832,11 +736,14 @@ async function onScanSuccess(
       "error"
     );
 
+
     setTimeout(
       function () {
 
         saving = false;
+
         scanning = true;
+
 
         showMessage(
           "📷 फिर से QR Code Scan करें...",
@@ -859,6 +766,7 @@ async function onScanSuccess(
 function convertQRToRow(qrText) {
 
   let data = null;
+
 
   try {
 
@@ -891,36 +799,44 @@ function convertQRToRow(qrText) {
       data.DATE ||
       getToday(),
 
+
       data.awb ||
       data.AWB ||
       "",
+
 
       data.name ||
       data.NAME ||
       "",
 
+
       data.destination ||
       data.DESTINATION ||
       "",
+
 
       data.articleNo ||
       data.article_no ||
       data.article ||
       "",
 
+
       data.weight ||
       data.WEIGHT ||
       "",
+
 
       data.mobile ||
       data.mobileNo ||
       data.mobile_no ||
       "",
 
+
       data.order ||
       data.orderNo ||
       data.order_no ||
       "",
+
 
       data.live ||
       data.liveNo ||
@@ -975,13 +891,9 @@ async function saveToGoogleSheet(row) {
 
   }
 
+
   const rowToSave =
     nextRow;
-
-  debug(
-    "Saving to row: " +
-    rowToSave
-  );
 
 
   // ===================================================
@@ -997,30 +909,39 @@ async function saveToGoogleSheet(row) {
       rowToSave
     );
 
+
   const readUrl =
     "https://sheets.googleapis.com/v4/spreadsheets/" +
     SPREADSHEET_ID +
     "/values/" +
     readRange;
 
+
   const readResponse =
     await fetch(
       readUrl,
       {
+
         method: "GET",
 
         headers: {
+
           "Authorization":
             "Bearer " +
             accessToken
+
         }
+
       }
     );
+
 
   const readText =
     await readResponse.text();
 
+
   let readResult;
+
 
   try {
 
@@ -1037,6 +958,7 @@ async function saveToGoogleSheet(row) {
 
   }
 
+
   if (!readResponse.ok) {
 
     throw new Error(
@@ -1045,6 +967,7 @@ async function saveToGoogleSheet(row) {
     );
 
   }
+
 
   const existingRow =
     (
@@ -1064,6 +987,7 @@ async function saveToGoogleSheet(row) {
       ? String(existingRow[1]).trim()
       : "";
 
+
   const newAWB =
     row[1] !== undefined
       ? String(row[1]).trim()
@@ -1080,37 +1004,46 @@ async function saveToGoogleSheet(row) {
       ? row[0]
       : "",
 
+
     newAWB !== ""
       ? row[1]
       : existingAWB,
+
 
     row[2] !== undefined
       ? row[2]
       : "",
 
+
     row[3] !== undefined
       ? row[3]
       : "",
+
 
     row[4] !== undefined
       ? row[4]
       : "",
 
+
     row[5] !== undefined
       ? row[5]
       : "",
+
 
     row[6] !== undefined
       ? row[6]
       : "",
 
+
     row[7] !== undefined
       ? row[7]
       : "",
 
+
     row[8] !== undefined
       ? row[8]
       : "",
+
 
     existingRow[9] !== undefined
       ? existingRow[9]
@@ -1132,12 +1065,14 @@ async function saveToGoogleSheet(row) {
       rowToSave
     );
 
+
   const url =
     "https://sheets.googleapis.com/v4/spreadsheets/" +
     SPREADSHEET_ID +
     "/values/" +
     range +
     "?valueInputOption=USER_ENTERED";
+
 
   const response =
     await fetch(
@@ -1157,6 +1092,7 @@ async function saveToGoogleSheet(row) {
 
         },
 
+
         body:
           JSON.stringify({
 
@@ -1171,10 +1107,13 @@ async function saveToGoogleSheet(row) {
       }
     );
 
+
   const text =
     await response.text();
 
+
   let result;
+
 
   try {
 
@@ -1191,11 +1130,13 @@ async function saveToGoogleSheet(row) {
 
   }
 
+
   if (!response.ok) {
 
     if (response.status === 401) {
 
       accessToken = null;
+
 
       document
         .getElementById("loginBtn")
@@ -1203,6 +1144,7 @@ async function saveToGoogleSheet(row) {
         "inline-block";
 
     }
+
 
     throw new Error(
 
@@ -1224,6 +1166,7 @@ async function saveToGoogleSheet(row) {
       result.updates?.updatedRows ||
       0
     );
+
 
   const updatedCells =
     Number(
@@ -1251,20 +1194,6 @@ async function saveToGoogleSheet(row) {
 
   nextRow =
     rowToSave + 1;
-
-  debug(
-    "SAVE SUCCESS"
-  );
-
-  debug(
-    "Saved row: " +
-    rowToSave
-  );
-
-  debug(
-    "Next row will be: " +
-    nextRow
-  );
 
 }
 
@@ -1295,30 +1224,39 @@ function beep() {
       window.AudioContext ||
       window.webkitAudioContext;
 
+
     const audio =
       new AudioContext();
+
 
     const oscillator =
       audio.createOscillator();
 
+
     const gain =
       audio.createGain();
+
 
     oscillator.connect(
       gain
     );
 
+
     gain.connect(
       audio.destination
     );
 
+
     oscillator.frequency.value =
       900;
+
 
     gain.gain.value =
       0.2;
 
+
     oscillator.start();
+
 
     oscillator.stop(
       audio.currentTime +
@@ -1349,5 +1287,6 @@ function onScanFailure(error) {
 </script>
 
 </body>
+
 </html>
 ```
