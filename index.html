@@ -15,6 +15,7 @@
 
 <script src="https://accounts.google.com/gsi/client"></script>
 
+
 <style>
 
 body {
@@ -37,11 +38,6 @@ button {
   background: #4285f4;
   color: white;
   cursor: pointer;
-}
-
-button:disabled {
-  background: #999;
-  cursor: not-allowed;
 }
 
 #reader {
@@ -75,22 +71,29 @@ button:disabled {
 
 </head>
 
+
 <body>
 
+
 <h2>📷 QR Scanner</h2>
+
 
 <button id="loginBtn">
 🔐 Google Account Connect करें
 </button>
 
+
 <div id="reader"></div>
+
 
 <div id="message" class="info">
 Google Account check हो रहा है...
 </div>
 
 
+
 <script>
+
 
 // =====================================================
 // GOOGLE SETTINGS
@@ -99,14 +102,18 @@ Google Account check हो रहा है...
 const CLIENT_ID =
 "308840508820-b3qjh155tuj3jl53fqudm2aadk0omm8s.apps.googleusercontent.com";
 
+
 const SPREADSHEET_ID =
 "19CzQLHAihdyNl51W4nzcfzlYGs5V6n1PcOxCWwN-xRg";
+
 
 const SHEET_NAME =
 "Sheet1";
 
+
 const SHEETS_SCOPE =
 "https://www.googleapis.com/auth/spreadsheets";
+
 
 
 // =====================================================
@@ -123,15 +130,19 @@ let scanning = false;
 
 let saving = false;
 
+
+// नई Entry Row
 let nextRow = 2;
 
 
+
 // =====================================================
-// AUTO LOGIN MEMORY
+// LOGIN MEMORY
 // =====================================================
 
 const LOGIN_MEMORY_KEY =
 "qr_scanner_google_connected";
+
 
 
 // =====================================================
@@ -151,6 +162,7 @@ function showMessage(text, type) {
 }
 
 
+
 // =====================================================
 // PAGE LOAD
 // =====================================================
@@ -163,6 +175,7 @@ window.addEventListener(
 
   }
 );
+
 
 
 // =====================================================
@@ -202,23 +215,22 @@ function initializeGoogle() {
     });
 
 
-  /*
-   * अगर पहले इस browser में Google authorization
-   * हो चुका है तो automatic reconnect की कोशिश करें।
-   */
-
   const remembered =
     localStorage.getItem(
       LOGIN_MEMORY_KEY
     );
 
 
-  if (remembered === "YES") {
+  // पहले से Google authorization हुई है
+  if (
+    remembered === "YES"
+  ) {
 
     showMessage(
       "🔄 Google Account automatically connect हो रहा है...",
       "info"
     );
+
 
     autoConnect();
 
@@ -236,6 +248,7 @@ function initializeGoogle() {
 }
 
 
+
 // =====================================================
 // AUTO CONNECT
 // =====================================================
@@ -244,10 +257,7 @@ function autoConnect() {
 
   if (!tokenClient) {
 
-    showMessage(
-      "🔐 Google Account Connect करें",
-      "info"
-    );
+    showLoginButton();
 
     return;
 
@@ -255,12 +265,6 @@ function autoConnect() {
 
 
   try {
-
-    /*
-     * Empty prompt का मतलब:
-     * अगर authorization पहले से दी हुई है,
-     * तो दोबारा consent मांगने की कोशिश न करें।
-     */
 
     tokenClient.requestAccessToken({
 
@@ -272,11 +276,14 @@ function autoConnect() {
 
   catch (error) {
 
+    console.error(error);
+
     showLoginButton();
 
   }
 
 }
+
 
 
 // =====================================================
@@ -290,6 +297,7 @@ function showLoginButton() {
     .style.display =
     "inline-block";
 
+
   showMessage(
     "🔐 Google Account Connect करें",
     "info"
@@ -298,8 +306,9 @@ function showLoginButton() {
 }
 
 
+
 // =====================================================
-// GOOGLE LOGIN BUTTON
+// LOGIN BUTTON
 // =====================================================
 
 document
@@ -336,6 +345,7 @@ document
   );
 
 
+
 // =====================================================
 // TOKEN RESPONSE
 // =====================================================
@@ -346,11 +356,14 @@ function handleTokenResponse(response) {
 
     accessToken = null;
 
+
     localStorage.removeItem(
       LOGIN_MEMORY_KEY
     );
 
+
     showLoginButton();
+
 
     showMessage(
       "❌ Google authorization failed<br>" +
@@ -361,6 +374,7 @@ function handleTokenResponse(response) {
       "error"
     );
 
+
     return;
 
   }
@@ -370,12 +384,15 @@ function handleTokenResponse(response) {
 
     accessToken = null;
 
+
     showLoginButton();
+
 
     showMessage(
       "❌ Access token नहीं मिला",
       "error"
     );
+
 
     return;
 
@@ -383,7 +400,7 @@ function handleTokenResponse(response) {
 
 
   // =================================================
-  // TOKEN SUCCESS
+  // TOKEN RECEIVED
   // =================================================
 
   accessToken =
@@ -391,8 +408,9 @@ function handleTokenResponse(response) {
 
 
   /*
-   * Browser को याद रहेगा कि इस user ने
-   * Google authorization दिया था।
+   * Browser को याद रहेगा कि
+   * इस browser से Google authorization
+   * पहले हो चुकी है।
    */
 
   localStorage.setItem(
@@ -416,6 +434,7 @@ function handleTokenResponse(response) {
   testSheetAccess();
 
 }
+
 
 
 // =====================================================
@@ -475,17 +494,13 @@ async function testSheetAccess() {
 
     if (!response.ok) {
 
-      /*
-       * अगर token invalid है,
-       * तो remembered login हटाएँ।
-       */
-
       if (
         response.status === 401 ||
         response.status === 403
       ) {
 
         accessToken = null;
+
 
         localStorage.removeItem(
           LOGIN_MEMORY_KEY
@@ -541,7 +556,7 @@ async function testSheetAccess() {
 
 
     // =================================================
-    // LAST NAME के आधार पर NEXT ROW
+    // FIND FIRST EMPTY ROW
     // =================================================
 
     await findNextEmptyRow();
@@ -570,14 +585,7 @@ async function testSheetAccess() {
     );
 
 
-    /*
-     * Invalid token होने पर manual reconnect button
-     * वापस दिखाएँ।
-     */
-
-    if (
-      !accessToken
-    ) {
+    if (!accessToken) {
 
       showLoginButton();
 
@@ -588,21 +596,23 @@ async function testSheetAccess() {
 }
 
 
+
 // =====================================================
-// FIND NEXT ENTRY ROW
+// FIND FIRST EMPTY ROW
 // =====================================================
 //
-// नई Entry:
-// Column C में LAST NAME वाली Row + 1
+// Row 2 से शुरू होगा.
 //
-// Example:
+// अगर Row 2 भरी है
+// → Row 3
 //
-// C459 = Rahul
-// C460 = Amit
-// C461 = Mohit
-// C462 = खाली
+// Row 3 भरी है
+// → Row 4
 //
-// New Entry = Row 462
+// पहली पूरी खाली Row में Entry होगी.
+//
+// A:J में कोई भी data होने पर
+// Row को occupied माना जाएगा.
 //
 // =====================================================
 
@@ -610,7 +620,7 @@ async function findNextEmptyRow() {
 
   const range =
     encodeURIComponent(
-      SHEET_NAME + "!C2:C"
+      SHEET_NAME + "!A2:J"
     );
 
 
@@ -657,7 +667,7 @@ async function findNextEmptyRow() {
   catch (e) {
 
     throw new Error(
-      "Name Column response JSON नहीं है"
+      "Sheet data response JSON नहीं है"
     );
 
   }
@@ -671,6 +681,7 @@ async function findNextEmptyRow() {
 
       accessToken = null;
 
+
       localStorage.removeItem(
         LOGIN_MEMORY_KEY
       );
@@ -680,7 +691,7 @@ async function findNextEmptyRow() {
 
     throw new Error(
       result.error?.message ||
-      "Name Column पढ़ नहीं पाए"
+      "Sheet data पढ़ नहीं पाए"
     );
 
   }
@@ -690,12 +701,13 @@ async function findNextEmptyRow() {
     result.values || [];
 
 
-  let lastNameRow = 1;
+  // Default Row 2
+  let foundRow = 2;
 
 
-  // ---------------------------------------------------
-  // Column C में आखिरी भरा हुआ Name खोजें
-  // ---------------------------------------------------
+  // =================================================
+  // ROW BY ROW CHECK
+  // =================================================
 
   for (
     let i = 0;
@@ -703,43 +715,59 @@ async function findNextEmptyRow() {
     i++
   ) {
 
-    const name =
-      values[i] &&
-      values[i][0] !== undefined
-        ? String(values[i][0]).trim()
-        : "";
+    const currentRow =
+      values[i] || [];
 
 
-    if (name !== "") {
+    /*
+     * A:J में कोई भी value है
+     * तो Row भरी हुई है।
+     */
 
-      lastNameRow =
+    const hasData =
+      currentRow.some(
+        function(cell) {
+
+          return (
+            cell !== undefined &&
+            String(cell).trim() !== ""
+          );
+
+        }
+      );
+
+
+    // =================================================
+    // पहली खाली Row मिल गई
+    // =================================================
+
+    if (!hasData) {
+
+      foundRow =
         i + 2;
+
+      break;
 
     }
 
-  }
 
+    // Row भरी है
+    // अगली Row check होगी
 
-  // ---------------------------------------------------
-  // Last Name + 1
-  // ---------------------------------------------------
-
-  if (
-    lastNameRow < 2
-  ) {
-
-    nextRow = 2;
+    foundRow =
+      i + 3;
 
   }
 
-  else {
 
-    nextRow =
-      lastNameRow + 1;
-
-  }
+  nextRow =
+    Math.max(
+      2,
+      foundRow
+    );
 
 }
+
 
 
 // =====================================================
@@ -795,6 +823,7 @@ function startScanner() {
 
     )
 
+
     .then(
       function () {
 
@@ -809,6 +838,7 @@ function startScanner() {
       }
     )
 
+
     .catch(
       function (error) {
 
@@ -822,6 +852,7 @@ function startScanner() {
     );
 
 }
+
 
 
 // =====================================================
@@ -862,6 +893,7 @@ async function onScanSuccess(
       );
 
 
+    // Save होने वाली Row पहले store करें
     const savedRow =
       nextRow;
 
@@ -937,6 +969,7 @@ async function onScanSuccess(
 }
 
 
+
 // =====================================================
 // CONVERT QR DATA
 // =====================================================
@@ -960,6 +993,7 @@ function convertQRToRow(qrText) {
     data = null;
 
   }
+
 
 
   // ===================================================
@@ -1026,6 +1060,7 @@ function convertQRToRow(qrText) {
   }
 
 
+
   // ===================================================
   // NON JSON QR
   // ===================================================
@@ -1055,6 +1090,7 @@ function convertQRToRow(qrText) {
 }
 
 
+
 // =====================================================
 // SAVE TO GOOGLE SHEETS
 // =====================================================
@@ -1072,6 +1108,7 @@ async function saveToGoogleSheet(row) {
 
   const rowToSave =
     nextRow;
+
 
 
   // ===================================================
@@ -1145,6 +1182,7 @@ async function saveToGoogleSheet(row) {
 
       accessToken = null;
 
+
       localStorage.removeItem(
         LOGIN_MEMORY_KEY
       );
@@ -1169,20 +1207,26 @@ async function saveToGoogleSheet(row) {
       : [];
 
 
+
   // ===================================================
-  // AWB
+  // EXISTING AWB
   // ===================================================
 
   const existingAWB =
     existingRow[1] !== undefined
-      ? String(existingRow[1]).trim()
+      ? String(
+          existingRow[1]
+        ).trim()
       : "";
 
 
   const newAWB =
     row[1] !== undefined
-      ? String(row[1]).trim()
+      ? String(
+          row[1]
+        ).trim()
       : "";
+
 
 
   // ===================================================
@@ -1241,6 +1285,7 @@ async function saveToGoogleSheet(row) {
       : ""
 
   ];
+
 
 
   // ===================================================
@@ -1330,6 +1375,7 @@ async function saveToGoogleSheet(row) {
 
       accessToken = null;
 
+
       localStorage.removeItem(
         LOGIN_MEMORY_KEY
       );
@@ -1356,6 +1402,11 @@ async function saveToGoogleSheet(row) {
 
   }
 
+
+
+  // ===================================================
+  // VERIFY UPDATE
+  // ===================================================
 
   const updatedRows =
     Number(
@@ -1385,14 +1436,16 @@ async function saveToGoogleSheet(row) {
   }
 
 
+
   // ===================================================
-  // SUCCESS
+  // NEXT ROW
   // ===================================================
 
   nextRow =
     rowToSave + 1;
 
 }
+
 
 
 // =====================================================
@@ -1407,6 +1460,7 @@ function getToday() {
     );
 
 }
+
 
 
 // =====================================================
@@ -1471,6 +1525,7 @@ function beep() {
 }
 
 
+
 // =====================================================
 // SCAN FAILURE
 // =====================================================
@@ -1480,6 +1535,7 @@ function onScanFailure(error) {
   // Continuous scan errors ignore करें
 
 }
+
 
 </script>
 
