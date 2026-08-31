@@ -484,6 +484,8 @@ async function testSheetAccess() {
 
         found = true;
 
+        break;
+
       }
 
     }
@@ -498,6 +500,7 @@ async function testSheetAccess() {
     }
 
 
+    // Row 2 से पहली खाली Name Row
     await findNextEmptyRow();
 
 
@@ -533,30 +536,83 @@ async function testSheetAccess() {
 
 
 // =====================================================
+// CLEAN NAME VALUE
+// =====================================================
+//
+// यह function इन सभी को EMPTY मानेगा:
+//
+// ""
+// " "
+// "   "
+// non-breaking space
+// zero-width space
+// formula से आया blank
+//
+// =====================================================
+
+function cleanNameValue(value) {
+
+  if (
+    value === null ||
+    value === undefined
+  ) {
+
+    return "";
+
+  }
+
+
+  return String(value)
+
+    .replace(/\u00A0/g, "")
+
+    .replace(/\u200B/g, "")
+
+    .replace(/\u200C/g, "")
+
+    .replace(/\u200D/g, "")
+
+    .trim();
+
+}
+
+
+// =====================================================
 // FIND NEXT ENTRY ROW
 // =====================================================
 //
 // IMPORTANT:
 //
-// केवल Column C = Name को master माना गया है.
+// केवल Column C = Name.
 //
-// Row 2 से शुरू होगा.
+// हमेशा C2 से शुरू.
 //
-// पहली खाली Name वाली Row = नई Entry Row.
+// पहली EMPTY C cell = Entry Row.
 //
-// J Courier formula को बिल्कुल check नहीं किया जाएगा.
+// J Courier का कोई relation नहीं.
 //
 // =====================================================
 
 async function findNextEmptyRow() {
 
-  // हर बार Row 2 से शुरू करें
+  // ===================================================
+  // HARD RESET
+  // ===================================================
+
   nextRow = 2;
 
 
+  // ===================================================
+  // IMPORTANT:
+  // C2:C1000 पढ़ेंगे
+  //
+  // C2 खाली होने पर भी result में C2 की
+  // position maintain होगी.
+  // ===================================================
+
   const range =
     encodeURIComponent(
-      SHEET_NAME + "!C2:C"
+      SHEET_NAME + "!C2:C1000"
     );
 
 
@@ -564,7 +620,9 @@ async function findNextEmptyRow() {
     "https://sheets.googleapis.com/v4/spreadsheets/" +
     SPREADSHEET_ID +
     "/values/" +
-    range;
+    range +
+    "?majorDimension=COLUMNS" +
+    "&valueRenderOption=FORMATTED_VALUE";
 
 
   const response =
@@ -619,30 +677,52 @@ async function findNextEmptyRow() {
   }
 
 
-  const values =
-    result.values || [];
+  // ===================================================
+  // COLUMN C VALUES
+  // ===================================================
+
+  const columnValues =
+    (
+      result.values &&
+      result.values[0]
+    )
+      ? result.values[0]
+      : [];
 
 
   // ===================================================
-  // ROW 2 से पहली खाली Name Row
+  // ALWAYS START FROM ROW 2
+  // ===================================================
+
+  nextRow = 2;
+
+
+  // ===================================================
+  // C2 → C1000
   // ===================================================
 
   for (
     let i = 0;
-    i < values.length;
+    i < 999;
     i++
   ) {
 
-    const name =
-      values[i] &&
-      values[i][0] !== undefined
-        ? String(
-            values[i][0]
-          ).trim()
+    const value =
+      columnValues[i] !== undefined
+        ? columnValues[i]
         : "";
 
 
-    // पहली खाली C row मिल गई
+    const name =
+      cleanNameValue(
+        value
+      );
+
+
+    // =================================================
+    // FIRST EMPTY NAME
+    // =================================================
+
     if (
       name === ""
     ) {
@@ -658,11 +738,10 @@ async function findNextEmptyRow() {
 
 
   // ===================================================
-  // अगर C2 से नीचे कोई खाली row नहीं है
+  // अगर C2:C1000 तक सब भरा है
   // ===================================================
 
-  nextRow =
-    values.length + 2;
+  nextRow = 1001;
 
 }
 
@@ -782,15 +861,19 @@ async function onScanSuccess(
   try {
 
     // =================================================
-    // IMPORTANT:
-    // Scan होने के बाद फिर से Column C check करें
-    // ताकि stale/random nextRow की समस्या न हो.
+    // VERY IMPORTANT
+    //
+    // QR scan के ठीक बाद Column C फिर से पढ़ेंगे.
+    // इसलिए पुराना nextRow इस्तेमाल नहीं होगा.
     // =================================================
 
     await findNextEmptyRow();
 
 
-    // जिस Row में save करना है उसे LOCK करें
+    // =================================================
+    // ROW NUMBER LOCK
+    // =================================================
+
     const rowToSave =
       nextRow;
 
@@ -819,7 +902,7 @@ async function onScanSuccess(
     beep();
 
 
-    // अगली scan के लिए
+    // अगली scan पर फिर Column C check होगा
     nextRow =
       rowToSave + 1;
 
@@ -1109,7 +1192,7 @@ async function saveToGoogleSheet(
 
 
   // ===================================================
-  // FINAL A:I ROW
+  // FINAL A:I
   // ===================================================
 
   const finalRow = [
@@ -1243,6 +1326,8 @@ async function saveToGoogleSheet(
         LOGIN_MEMORY_KEY
       );
 
+      showLoginButton();
+
     }
 
 
@@ -1261,7 +1346,7 @@ async function saveToGoogleSheet(
 
 
   // ===================================================
-  // COURIER = J
+  // COURIER = COLUMN J
   // ===================================================
 
   const courierFormula =
