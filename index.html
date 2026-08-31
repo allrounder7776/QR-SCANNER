@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="hi">
 
@@ -104,7 +103,7 @@ Diagnostic शुरू नहीं हुआ...
 // =====================================================
 
 const CLIENT_ID =
-"308840508820-b3qjh155tuj3jl53fqudm2aadk0omm8s.apps.googleusercontent.com";
+"308840508820-b3qjh155tuj3jl53fqudm2adk0omm8s.apps.googleusercontent.com";
 
 const SPREADSHEET_ID =
 "19CzQLHAihdyNl51W4nzcfzlYGs5V6n1PcOxCWwN-xRg";
@@ -735,7 +734,7 @@ async function onScanSuccess(
       "✅ Entry Successfully Save हो गई<br>" +
       "Row No: " +
       (nextRow - 1) +
-      "<br>🚚 Courier सुरक्षित है",
+      "<br>🔒 AWB और Courier सुरक्षित हैं",
       "success"
     );
 
@@ -840,10 +839,6 @@ function convertQRToRow(qrText) {
 
   // ===================================================
   // JSON QR
-  //
-  // IMPORTANT:
-  // Courier को यहाँ से SAVE नहीं किया जाएगा।
-  // Courier column J को Google Sheet खुद handle करेगा.
   // ===================================================
 
   if (
@@ -931,16 +926,26 @@ function convertQRToRow(qrText) {
 // SAVE TO GOOGLE SHEETS
 // =====================================================
 //
-// IMPORTANT FIX:
+// IMPORTANT:
 //
-// पहले:
-// A:J  ---> Courier वाला J column भी overwrite हो रहा था.
+// A = Date
+// B = AWB
+// C = Name
+// D = Destination
+// E = Article No
+// F = Weight
+// G = Mobile
+// H = Order
+// I = Live
+// J = Courier
 //
-// अब:
-// A:I  ---> केवल QR की 9 fields save होंगी.
+// AWB और Courier को सुरक्षित रखने के लिए:
 //
-// J column को बिल्कुल touch नहीं किया जाएगा.
-// इसलिए J में मौजूद Courier formula/value delete नहीं होगी.
+// 1. पहले existing A:J row पढ़ेंगे.
+// 2. A, C:I को update करेंगे.
+// 3. B (AWB) को केवल तभी update करेंगे जब नया AWB मिला हो.
+// 4. J (Courier) को कभी update नहीं करेंगे.
+//
 // =====================================================
 
 async function saveToGoogleSheet(row) {
@@ -970,10 +975,210 @@ async function saveToGoogleSheet(row) {
 
 
   // ===================================================
-  // ONLY A:I
+  // STEP 1
+  // Existing A:J data पढ़ना
+  // ===================================================
+
+  const readRange =
+    encodeURIComponent(
+      SHEET_NAME +
+      "!A" +
+      rowToSave +
+      ":J" +
+      rowToSave
+    );
+
+
+  const readUrl =
+    "https://sheets.googleapis.com/v4/spreadsheets/" +
+    SPREADSHEET_ID +
+    "/values/" +
+    readRange;
+
+
+  debug(
+    "Reading existing row before save..."
+  );
+
+
+  const readResponse =
+    await fetch(
+      readUrl,
+      {
+
+        method: "GET",
+
+        headers: {
+
+          "Authorization":
+            "Bearer " +
+            accessToken
+
+        }
+
+      }
+    );
+
+
+  const readText =
+    await readResponse.text();
+
+
+  let readResult;
+
+
+  try {
+
+    readResult =
+      JSON.parse(readText);
+
+  }
+
+  catch (e) {
+
+    throw new Error(
+      "Existing row पढ़ने में invalid response मिला"
+    );
+
+  }
+
+
+  if (!readResponse.ok) {
+
+    throw new Error(
+      readResult.error?.message ||
+      "Existing row पढ़ नहीं पाए"
+    );
+
+  }
+
+
+  const existingRow =
+    (
+      readResult.values &&
+      readResult.values[0]
+    )
+      ? readResult.values[0]
+      : [];
+
+
+  debug(
+    "Existing row: " +
+    JSON.stringify(existingRow)
+  );
+
+
+  // ===================================================
+  // STEP 2
+  // Existing data को preserve करना
+  // ===================================================
+
+  const existingAWB =
+    existingRow[1] !== undefined
+      ? String(existingRow[1]).trim()
+      : "";
+
+
+  const newAWB =
+    row[1] !== undefined
+      ? String(row[1]).trim()
+      : "";
+
+
+  // ===================================================
+  // STEP 3
+  // पूरा A:J row तैयार करना
   //
-  // J = COURIER
-  // J को जानबूझकर छोड़ रहे हैं.
+  // ध्यान दें:
+  //
+  // J = Courier
+  // Existing Courier हमेशा preserve होगा.
+  //
+  // B = AWB
+  // अगर नया AWB खाली है और पुराना AWB मौजूद है,
+  // तो पुराना AWB ही रखा जाएगा.
+  // ===================================================
+
+  const finalRow = [
+
+    // A - Date
+    row[0] !== undefined
+      ? row[0]
+      : "",
+
+
+    // B - AWB
+    newAWB !== ""
+      ? row[1]
+      : existingAWB,
+
+
+    // C - Name
+    row[2] !== undefined
+      ? row[2]
+      : "",
+
+
+    // D - Destination
+    row[3] !== undefined
+      ? row[3]
+      : "",
+
+
+    // E - Article No
+    row[4] !== undefined
+      ? row[4]
+      : "",
+
+
+    // F - Weight
+    row[5] !== undefined
+      ? row[5]
+      : "",
+
+
+    // G - Mobile
+    row[6] !== undefined
+      ? row[6]
+      : "",
+
+
+    // H - Order
+    row[7] !== undefined
+      ? row[7]
+      : "",
+
+
+    // I - Live
+    row[8] !== undefined
+      ? row[8]
+      : "",
+
+
+    // J - Courier
+    existingRow[9] !== undefined
+      ? existingRow[9]
+      : ""
+
+  ];
+
+
+  debug(
+    "FINAL ROW:"
+  );
+
+
+  debug(
+    JSON.stringify(finalRow)
+  );
+
+
+  // ===================================================
+  // STEP 4
+  // A:J update
+  //
+  // AWB खाली आने पर पुराना AWB preserve रहेगा.
+  // Courier पुराना value/formula preserve रहेगा.
   // ===================================================
 
   const range =
@@ -981,7 +1186,7 @@ async function saveToGoogleSheet(row) {
       SHEET_NAME +
       "!A" +
       rowToSave +
-      ":I" +
+      ":J" +
       rowToSave
     );
 
@@ -995,12 +1200,7 @@ async function saveToGoogleSheet(row) {
 
 
   debug(
-    "Writing only A:I..."
-  );
-
-
-  debug(
-    "Courier column J will NOT be modified."
+    "Writing protected A:J row..."
   );
 
 
@@ -1029,7 +1229,7 @@ async function saveToGoogleSheet(row) {
               "ROWS",
 
             values:
-              [row]
+              [finalRow]
 
           })
 
@@ -1153,12 +1353,12 @@ async function saveToGoogleSheet(row) {
 
 
   debug(
-    "A:I saved successfully."
+    "AWB protected successfully."
   );
 
 
   debug(
-    "J (Courier) was NOT modified."
+    "Courier protected successfully."
   );
 
 
@@ -1275,4 +1475,3 @@ function onScanFailure(error) {
 
 </body>
 </html>
-```
