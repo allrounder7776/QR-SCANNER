@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="hi">
-
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,7 +10,6 @@
 <script src="https://accounts.google.com/gsi/client"></script>
 
 <style>
-
 body {
   font-family: Arial, sans-serif;
   text-align: center;
@@ -74,7 +72,6 @@ button {
 .info {
   color: #333;
 }
-
 </style>
 </head>
 
@@ -125,11 +122,6 @@ let scanner = null;
 let scanning = false;
 let saving = false;
 
-
-// =====================================================
-// NEW ENTRY ALWAYS STARTS FROM ROW 2
-// =====================================================
-
 let nextRow = 2;
 
 
@@ -138,14 +130,9 @@ let nextRow = 2;
 // =====================================================
 
 function showMessage(text, type) {
-
-  const box =
-    document.getElementById("message");
-
+  const box = document.getElementById("message");
   box.innerHTML = text;
-
-  box.className =
-    type || "info";
+  box.className = type || "info";
 }
 
 
@@ -154,14 +141,11 @@ function showMessage(text, type) {
 // =====================================================
 
 function debug(text) {
-
   console.log(text);
 
-  const box =
-    document.getElementById("debug");
+  const box = document.getElementById("debug");
 
-  box.innerText +=
-    "\n" + text;
+  box.innerText += "\n" + text;
 }
 
 
@@ -169,68 +153,61 @@ function debug(text) {
 // PAGE LOAD
 // =====================================================
 
-window.addEventListener(
-  "load",
-  function () {
+window.addEventListener("load", function () {
 
-    debug("Page loaded");
+  debug("Page loaded");
 
-    debug(
-      "Google library: " +
-      (
-        typeof google !== "undefined"
-          ? "LOADED"
-          : "NOT LOADED"
-      )
-    );
+  debug(
+    "Google library: " +
+    (
+      typeof google !== "undefined"
+        ? "LOADED"
+        : "NOT LOADED"
+    )
+  );
 
-
-    if (
-      typeof google === "undefined" ||
-      !google.accounts ||
-      !google.accounts.oauth2
-    ) {
-
-      showMessage(
-        "❌ Google Login library load नहीं हुई",
-        "error"
-      );
-
-      debug(
-        "ERROR: Google OAuth library missing"
-      );
-
-      return;
-    }
-
-
-    tokenClient =
-      google.accounts.oauth2.initTokenClient({
-
-        client_id:
-          CLIENT_ID,
-
-        scope:
-          SHEETS_SCOPE,
-
-        callback:
-          handleTokenResponse
-
-      });
-
-
-    debug(
-      "OAuth client initialized"
-    );
-
+  if (
+    typeof google === "undefined" ||
+    !google.accounts ||
+    !google.accounts.oauth2
+  ) {
 
     showMessage(
-      "🔐 Google Account Connect करें",
-      "info"
+      "❌ Google Login library load नहीं हुई",
+      "error"
     );
 
+    debug(
+      "ERROR: Google OAuth library missing"
+    );
+
+    return;
   }
-);
+
+  tokenClient =
+    google.accounts.oauth2.initTokenClient({
+
+      client_id:
+        CLIENT_ID,
+
+      scope:
+        SHEETS_SCOPE,
+
+      callback:
+        handleTokenResponse
+
+    });
+
+  debug(
+    "OAuth client initialized"
+  );
+
+  showMessage(
+    "🔐 Google Account Connect करें",
+    "info"
+  );
+
+});
 
 
 // =====================================================
@@ -239,40 +216,32 @@ window.addEventListener(
 
 document
   .getElementById("loginBtn")
-  .addEventListener(
-    "click",
-    function () {
+  .addEventListener("click", function () {
 
-      if (!tokenClient) {
-
-        showMessage(
-          "❌ OAuth अभी तैयार नहीं है",
-          "error"
-        );
-
-        return;
-      }
-
-
-      debug(
-        "Requesting Google access token..."
-      );
-
+    if (!tokenClient) {
 
       showMessage(
-        "⏳ Google authorization...",
-        "info"
+        "❌ OAuth अभी तैयार नहीं है",
+        "error"
       );
 
-
-      tokenClient.requestAccessToken({
-
-        prompt: ""
-
-      });
-
+      return;
     }
-  );
+
+    debug(
+      "Requesting Google access token..."
+    );
+
+    showMessage(
+      "⏳ Google authorization...",
+      "info"
+    );
+
+    tokenClient.requestAccessToken({
+      prompt: ""
+    });
+
+  });
 
 
 // =====================================================
@@ -285,17 +254,14 @@ function handleTokenResponse(response) {
     "OAuth response received"
   );
 
-
   console.log(
     "OAuth Response:",
     response
   );
 
-
   if (response.error) {
 
     accessToken = null;
-
 
     showMessage(
       "❌ Google authorization failed<br>" +
@@ -306,7 +272,6 @@ function handleTokenResponse(response) {
       "error"
     );
 
-
     debug(
       "OAuth ERROR: " +
       (
@@ -315,10 +280,8 @@ function handleTokenResponse(response) {
       )
     );
 
-
     return;
   }
-
 
   if (!response.access_token) {
 
@@ -334,26 +297,21 @@ function handleTokenResponse(response) {
     return;
   }
 
-
   accessToken =
     response.access_token;
-
 
   debug(
     "Access token received: YES"
   );
 
-
   document
     .getElementById("loginBtn")
     .style.display = "none";
-
 
   showMessage(
     "✅ Google Account Connected<br>⏳ Sheet access test हो रहा है...",
     "success"
   );
-
 
   testSheetAccess();
 
@@ -370,11 +328,9 @@ async function testSheetAccess() {
     "Testing Spreadsheet access..."
   );
 
-
   const url =
     "https://sheets.googleapis.com/v4/spreadsheets/" +
     SPREADSHEET_ID;
-
 
   try {
 
@@ -392,25 +348,20 @@ async function testSheetAccess() {
         }
       );
 
-
     const text =
       await response.text();
-
 
     debug(
       "Spreadsheet HTTP: " +
       response.status
     );
 
-
     debug(
       "Spreadsheet response: " +
       text.substring(0, 500)
     );
 
-
     let result;
-
 
     try {
 
@@ -418,7 +369,6 @@ async function testSheetAccess() {
         JSON.parse(text);
 
     }
-
     catch (e) {
 
       throw new Error(
@@ -426,7 +376,6 @@ async function testSheetAccess() {
       );
 
     }
-
 
     if (!response.ok) {
 
@@ -437,19 +386,15 @@ async function testSheetAccess() {
 
     }
 
-
     debug(
       "Spreadsheet access: OK"
     );
 
-
     const sheets =
       result.sheets || [];
 
-
     let found =
       false;
-
 
     for (
       let i = 0;
@@ -460,12 +405,10 @@ async function testSheetAccess() {
       const title =
         sheets[i].properties?.title;
 
-
       debug(
         "Found sheet: " +
         title
       );
-
 
       if (
         title === SHEET_NAME
@@ -477,7 +420,6 @@ async function testSheetAccess() {
 
     }
 
-
     if (!found) {
 
       throw new Error(
@@ -486,27 +428,26 @@ async function testSheetAccess() {
 
     }
 
-
     debug(
       "Sheet1: FOUND"
     );
 
+    // IMPORTANT:
+    // Existing data देखकर अगली खाली Row तय करें
+    await findNextEmptyRow();
 
     showMessage(
       "✅ Google Sheet Connected<br>📷 अब QR Scan करें",
       "success"
     );
 
-
     startScanner();
 
   }
 
-
   catch (error) {
 
     console.error(error);
-
 
     showMessage(
       "❌ Sheet access failed<br>" +
@@ -514,13 +455,133 @@ async function testSheetAccess() {
       "error"
     );
 
-
     debug(
       "SHEET ERROR: " +
       error.message
     );
 
   }
+
+}
+
+
+// =====================================================
+// FIND NEXT EMPTY ROW
+// हमेशा Row 2 से शुरू होगी
+// =====================================================
+
+async function findNextEmptyRow() {
+
+  debug(
+    "Finding next empty row from Row 2..."
+  );
+
+  const range =
+    encodeURIComponent(
+      SHEET_NAME + "!A2:J"
+    );
+
+  const url =
+    "https://sheets.googleapis.com/v4/spreadsheets/" +
+    SPREADSHEET_ID +
+    "/values/" +
+    range;
+
+  const response =
+    await fetch(
+      url,
+      {
+        method: "GET",
+
+        headers: {
+          "Authorization":
+            "Bearer " +
+            accessToken
+        }
+      }
+    );
+
+  const text =
+    await response.text();
+
+  let result;
+
+  try {
+
+    result =
+      JSON.parse(text);
+
+  }
+  catch (e) {
+
+    throw new Error(
+      "Sheet rows response JSON नहीं है"
+    );
+
+  }
+
+  if (!response.ok) {
+
+    throw new Error(
+      result.error?.message ||
+      "Sheet rows पढ़ नहीं पाए"
+    );
+
+  }
+
+  const values =
+    result.values || [];
+
+  let foundRow = 2;
+
+  for (
+    let i = 0;
+    i < values.length;
+    i++
+  ) {
+
+    const row =
+      values[i] || [];
+
+    let hasData = false;
+
+    for (
+      let j = 0;
+      j < row.length;
+      j++
+    ) {
+
+      if (
+        String(row[j] ?? "").trim() !== ""
+      ) {
+
+        hasData = true;
+        break;
+      }
+
+    }
+
+    if (!hasData) {
+
+      foundRow =
+        i + 2;
+
+      break;
+
+    }
+
+    foundRow =
+      i + 3;
+
+  }
+
+  nextRow =
+    Math.max(2, foundRow);
+
+  debug(
+    "Next empty row: " +
+    nextRow
+  );
 
 }
 
@@ -535,17 +596,14 @@ function startScanner() {
     return;
   }
 
-
   debug(
     "Starting camera..."
   );
-
 
   scanner =
     new Html5Qrcode(
       "reader"
     );
-
 
   const config = {
 
@@ -559,7 +617,6 @@ function startScanner() {
     aspectRatio: 1.0
 
   };
-
 
   scanner
     .start(
@@ -581,11 +638,9 @@ function startScanner() {
 
         scanning = true;
 
-
         debug(
           "Camera started: OK"
         );
-
 
         showMessage(
           "📷 QR Code Scan करें...",
@@ -602,7 +657,6 @@ function startScanner() {
           "CAMERA ERROR: " +
           error
         );
-
 
         showMessage(
           "❌ Camera start नहीं हुआ<br>" +
@@ -632,10 +686,8 @@ async function onScanSuccess(
     return;
   }
 
-
   saving = true;
   scanning = false;
-
 
   debug(
     "=========================="
@@ -653,12 +705,10 @@ async function onScanSuccess(
     decodedText
   );
 
-
   showMessage(
     "⏳ QR पढ़ लिया गया...<br>Google Sheet में save हो रहा है...",
     "info"
   );
-
 
   try {
 
@@ -667,27 +717,21 @@ async function onScanSuccess(
         decodedText
       );
 
-
     debug(
       "ROW TO SAVE:"
     );
-
 
     debug(
       JSON.stringify(row)
     );
 
-
-    const result =
-      await saveToGoogleSheet(
-        row
-      );
-
+    await saveToGoogleSheet(
+      row
+    );
 
     debug(
       "API SAVE: SUCCESS"
     );
-
 
     showMessage(
       "✅ Entry Successfully Save हो गई<br>" +
@@ -697,16 +741,13 @@ async function onScanSuccess(
       "success"
     );
 
-
     beep();
-
 
     setTimeout(
       function () {
 
         saving = false;
         scanning = true;
-
 
         showMessage(
           "📷 अगला QR Code Scan करें...",
@@ -719,21 +760,17 @@ async function onScanSuccess(
 
   }
 
-
   catch (error) {
 
     console.error(error);
-
 
     debug(
       "SAVE ERROR:"
     );
 
-
     debug(
       error.message
     );
-
 
     showMessage(
       "❌ Entry Save नहीं हुई<br><br>" +
@@ -741,13 +778,11 @@ async function onScanSuccess(
       "error"
     );
 
-
     setTimeout(
       function () {
 
         saving = false;
         scanning = true;
-
 
         showMessage(
           "📷 फिर से QR Code Scan करें...",
@@ -770,7 +805,6 @@ async function onScanSuccess(
 function convertQRToRow(qrText) {
 
   let data = null;
-
 
   // JSON check
 
@@ -891,7 +925,7 @@ function convertQRToRow(qrText) {
 // J = Courier
 //
 // AWB खाली होने पर पुराना AWB सुरक्षित रहेगा.
-// Courier column J को भी सुरक्षित रखा जाएगा.
+// Courier column J भी सुरक्षित रहेगा.
 //
 // =====================================================
 
@@ -906,9 +940,10 @@ async function saveToGoogleSheet(row) {
   }
 
 
+  // हमेशा current nextRow इस्तेमाल होगा
+
   const rowToSave =
     nextRow;
-
 
   debug(
     "Saving to row: " +
@@ -929,13 +964,11 @@ async function saveToGoogleSheet(row) {
       rowToSave
     );
 
-
   const readUrl =
     "https://sheets.googleapis.com/v4/spreadsheets/" +
     SPREADSHEET_ID +
     "/values/" +
     readRange;
-
 
   const readResponse =
     await fetch(
@@ -951,13 +984,10 @@ async function saveToGoogleSheet(row) {
       }
     );
 
-
   const readText =
     await readResponse.text();
 
-
   let readResult;
-
 
   try {
 
@@ -974,7 +1004,6 @@ async function saveToGoogleSheet(row) {
 
   }
 
-
   if (!readResponse.ok) {
 
     throw new Error(
@@ -984,7 +1013,6 @@ async function saveToGoogleSheet(row) {
 
   }
 
-
   const existingRow =
     (
       readResult.values &&
@@ -992,7 +1020,6 @@ async function saveToGoogleSheet(row) {
     )
       ? readResult.values[0]
       : [];
-
 
   debug(
     "Existing row: " +
@@ -1008,7 +1035,6 @@ async function saveToGoogleSheet(row) {
     existingRow[1] !== undefined
       ? String(existingRow[1]).trim()
       : "";
-
 
   const newAWB =
     row[1] !== undefined
@@ -1029,8 +1055,6 @@ async function saveToGoogleSheet(row) {
 
 
     // B - AWB
-    // नया AWB है तो नया AWB
-    // नहीं है तो पुराना AWB
     newAWB !== ""
       ? row[1]
       : existingAWB,
@@ -1079,7 +1103,6 @@ async function saveToGoogleSheet(row) {
 
 
     // J - Courier
-    // पुराना Courier हमेशा preserve
     existingRow[9] !== undefined
       ? existingRow[9]
       : ""
@@ -1090,7 +1113,6 @@ async function saveToGoogleSheet(row) {
   debug(
     "FINAL ROW:"
   );
-
 
   debug(
     JSON.stringify(finalRow)
@@ -1110,14 +1132,12 @@ async function saveToGoogleSheet(row) {
       rowToSave
     );
 
-
   const url =
     "https://sheets.googleapis.com/v4/spreadsheets/" +
     SPREADSHEET_ID +
     "/values/" +
     range +
     "?valueInputOption=USER_ENTERED";
-
 
   const response =
     await fetch(
@@ -1151,29 +1171,23 @@ async function saveToGoogleSheet(row) {
       }
     );
 
-
   const text =
     await response.text();
-
 
   debug(
     "API HTTP STATUS: " +
     response.status
   );
 
-
   debug(
     "API RESPONSE:"
   );
-
 
   debug(
     text.substring(0, 1500)
   );
 
-
   let result;
-
 
   try {
 
@@ -1190,13 +1204,11 @@ async function saveToGoogleSheet(row) {
 
   }
 
-
   if (!response.ok) {
 
     if (response.status === 401) {
 
       accessToken = null;
-
 
       document
         .getElementById("loginBtn")
@@ -1204,7 +1216,6 @@ async function saveToGoogleSheet(row) {
         "inline-block";
 
     }
-
 
     throw new Error(
 
@@ -1226,7 +1237,6 @@ async function saveToGoogleSheet(row) {
       result.updates?.updatedRows ||
       0
     );
-
 
   const updatedCells =
     Number(
@@ -1255,33 +1265,19 @@ async function saveToGoogleSheet(row) {
   nextRow =
     rowToSave + 1;
 
-
   debug(
     "SAVE SUCCESS"
   );
-
 
   debug(
     "Saved row: " +
     rowToSave
   );
 
-
-  debug(
-    "AWB protected successfully."
-  );
-
-
-  debug(
-    "Courier protected successfully."
-  );
-
-
   debug(
     "Next row will be: " +
     nextRow
   );
-
 
   return {
 
@@ -1326,39 +1322,30 @@ function beep() {
       window.AudioContext ||
       window.webkitAudioContext;
 
-
     const audio =
       new AudioContext();
-
 
     const oscillator =
       audio.createOscillator();
 
-
     const gain =
       audio.createGain();
-
 
     oscillator.connect(
       gain
     );
 
-
     gain.connect(
       audio.destination
     );
 
-
     oscillator.frequency.value =
       900;
-
 
     gain.gain.value =
       0.2;
 
-
     oscillator.start();
-
 
     oscillator.stop(
       audio.currentTime +
