@@ -1,11 +1,10 @@
+```html
 <!DOCTYPE html>
 <html lang="hi">
 
 <head>
 <meta charset="UTF-8">
-
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>QR Scanner - Google Sheets</title>
 
@@ -227,7 +226,9 @@ function autoConnect() {
   try {
 
     tokenClient.requestAccessToken({
+
       prompt: ""
+
     });
 
   }
@@ -242,7 +243,7 @@ function autoConnect() {
 
 
 // =====================================================
-// LOGIN BUTTON
+// SHOW LOGIN BUTTON
 // =====================================================
 
 function showLoginButton() {
@@ -260,6 +261,10 @@ function showLoginButton() {
 
 }
 
+
+// =====================================================
+// LOGIN BUTTON
+// =====================================================
 
 document
   .getElementById("loginBtn")
@@ -286,7 +291,9 @@ document
 
 
       tokenClient.requestAccessToken({
+
         prompt: ""
+
       });
 
     }
@@ -395,6 +402,7 @@ async function testSheetAccess() {
 
 
     let result;
+
 
     try {
 
@@ -526,11 +534,9 @@ async function testSheetAccess() {
 //
 // C = NAME
 //
-// Row 2 से check होगा.
+// Row 2 से पहली खाली C row
 //
-// पहली खाली C row = नई Entry
-//
-// J Courier को check नहीं किया जाएगा.
+// J को check नहीं किया जाएगा.
 //
 // =====================================================
 
@@ -586,7 +592,7 @@ async function findNextEntryRow() {
   catch {
 
     throw new Error(
-      "Name Column पढ़ने में error"
+      "Column C response invalid है"
     );
 
   }
@@ -605,10 +611,6 @@ async function findNextEntryRow() {
   const values =
     result.values || [];
 
-
-  // ===================================================
-  // C2 से पहली खाली CELL
-  // ===================================================
 
   for (
     let i = 0;
@@ -638,10 +640,6 @@ async function findNextEntryRow() {
 
   }
 
-
-  // ===================================================
-  // अगर सभी rows में Name है
-  // ===================================================
 
   nextRow =
     values.length + 2;
@@ -757,20 +755,12 @@ async function onScanSuccess(
 
   try {
 
-    // =================================================
-    // SCAN के समय C फिर से check
-    // =================================================
-
     await findNextEntryRow();
 
 
     const rowToSave =
       nextRow;
 
-
-    // =================================================
-    // QR DATA
-    // =================================================
 
     const row =
       convertQRToRow(
@@ -779,7 +769,7 @@ async function onScanSuccess(
 
 
     // =================================================
-    // D = PIN CODE
+    // D = PINCODE
     // =================================================
 
     const pinCode =
@@ -791,7 +781,52 @@ async function onScanSuccess(
 
 
     // =================================================
-    // PIN CODE से COURIER VALUE
+    // EXISTING J और K पढ़ें
+    // =================================================
+
+    const existingData =
+      await readCourierData(
+        rowToSave
+      );
+
+
+    let oldCourier =
+      existingData.oldCourier;
+
+
+    // =================================================
+    // अगर K में #N/A है
+    // तो उसे खाली मानेंगे
+    // =================================================
+
+    if (
+      oldCourier === "#N/A"
+    ) {
+
+      oldCourier = "";
+
+    }
+
+
+    // =================================================
+    // अगर K खाली है और J में असली Courier है
+    // तो J की पुरानी value K में सुरक्षित करें
+    // =================================================
+
+    if (
+      oldCourier === "" &&
+      existingData.currentCourier !== "" &&
+      existingData.currentCourier !== "#N/A"
+    ) {
+
+      oldCourier =
+        existingData.currentCourier;
+
+    }
+
+
+    // =================================================
+    // PINCODE से Courier खोजें
     // =================================================
 
     let courier = "";
@@ -810,13 +845,32 @@ async function onScanSuccess(
 
 
     // =================================================
-    // A:I + J VALUE SAVE
+    // COURIER नहीं मिला
+    // =================================================
+    //
+    // J में #N/A रहेगा
+    //
+    // =================================================
+
+    if (
+      courier === ""
+    ) {
+
+      courier =
+        "#N/A";
+
+    }
+
+
+    // =================================================
+    // ENTRY SAVE
     // =================================================
 
     await saveEntry(
       row,
       rowToSave,
-      courier
+      courier,
+      oldCourier
     );
 
 
@@ -887,19 +941,116 @@ async function onScanSuccess(
 
 
 // =====================================================
-// FIND COURIER
+// READ J + K
 // =====================================================
-//
-// D = PIN CODE
+
+async function readCourierData(
+  rowNumber
+) {
+
+  const range =
+    encodeURIComponent(
+      SHEET_NAME +
+      "!J" +
+      rowNumber +
+      ":K" +
+      rowNumber
+    );
+
+
+  const url =
+    "https://sheets.googleapis.com/v4/spreadsheets/" +
+    SPREADSHEET_ID +
+    "/values/" +
+    range;
+
+
+  const response =
+    await fetch(
+      url,
+      {
+
+        headers: {
+
+          "Authorization":
+            "Bearer " +
+            accessToken
+
+        }
+
+      }
+    );
+
+
+  const text =
+    await response.text();
+
+
+  let result;
+
+
+  try {
+
+    result =
+      JSON.parse(text);
+
+  }
+
+  catch {
+
+    throw new Error(
+      "Courier data invalid है"
+    );
+
+  }
+
+
+  if (!response.ok) {
+
+    throw new Error(
+      result.error?.message ||
+      "Courier data पढ़ नहीं पाए"
+    );
+
+  }
+
+
+  const values =
+    result.values &&
+    result.values[0]
+      ? result.values[0]
+      : [];
+
+
+  return {
+
+    currentCourier:
+      values[0] !== undefined
+        ? String(
+            values[0]
+          ).trim()
+        : "",
+
+    oldCourier:
+      values[1] !== undefined
+        ? String(
+            values[1]
+          ).trim()
+        : ""
+
+  };
+
+}
+
+
+// =====================================================
+// FIND COURIER BY PIN
+// =====================================================
 //
 // PIN CODE sheet:
 //
-// Column A = PIN
-// Column B = COURIER
-//
-// यहाँ VLOOKUP FORMULA नहीं लगाया जाता.
-//
-// केवल VALUE पढ़कर J में save होती है.
+// A = PIN
+// B = COURIER
 //
 // =====================================================
 
@@ -999,13 +1150,15 @@ async function findCourierByPin(
       sheetPin === searchPin
     ) {
 
-      return (
+      const courier =
         values[i][1] !== undefined
           ? String(
               values[i][1]
             ).trim()
-          : ""
-      );
+          : "";
+
+
+      return courier;
 
     }
 
@@ -1018,7 +1171,7 @@ async function findCourierByPin(
 
 
 // =====================================================
-// CONVERT QR
+// CONVERT QR DATA
 // =====================================================
 
 function convertQRToRow(
@@ -1043,10 +1196,6 @@ function convertQRToRow(
 
   }
 
-
-  // ===================================================
-  // JSON QR
-  // ===================================================
 
   if (
     data &&
@@ -1100,10 +1249,6 @@ function convertQRToRow(
   }
 
 
-  // ===================================================
-  // NON JSON QR
-  // ===================================================
-
   return [
 
     getToday(),
@@ -1135,16 +1280,17 @@ function convertQRToRow(
 //
 // A:I = QR DATA
 //
-// J = COURIER VALUE
+// J = COURIER
 //
-// J में कोई formula नहीं.
+// K = ORIGINAL COURIER
 //
 // =====================================================
 
 async function saveEntry(
   row,
   rowToSave,
-  courier
+  courier,
+  oldCourier
 ) {
 
   if (!accessToken) {
@@ -1157,7 +1303,7 @@ async function saveEntry(
 
 
   // ===================================================
-  // EXISTING A:I READ
+  // EXISTING A:I
   // ===================================================
 
   const readRange =
@@ -1211,7 +1357,7 @@ async function saveEntry(
   catch {
 
     throw new Error(
-      "Existing row पढ़ने में error"
+      "Existing row invalid है"
     );
 
   }
@@ -1228,16 +1374,14 @@ async function saveEntry(
 
 
   const existingRow =
-    (
-      readResult.values &&
-      readResult.values[0]
-    )
+    readResult.values &&
+    readResult.values[0]
       ? readResult.values[0]
       : [];
 
 
   // ===================================================
-  // AWB PRESERVE
+  // AWB
   // ===================================================
 
   const existingAWB =
@@ -1286,7 +1430,7 @@ async function saveEntry(
 
 
   // ===================================================
-  // WRITE A:I
+  // SAVE A:I
   // ===================================================
 
   const rangeAI =
@@ -1357,29 +1501,13 @@ async function saveEntry(
   catch {
 
     throw new Error(
-      "Google API response invalid है"
+      "A:I response invalid है"
     );
 
   }
 
 
   if (!responseAI.ok) {
-
-    if (
-      responseAI.status === 401 ||
-      responseAI.status === 403
-    ) {
-
-      accessToken = null;
-
-      localStorage.removeItem(
-        LOGIN_MEMORY_KEY
-      );
-
-      showLoginButton();
-
-    }
-
 
     throw new Error(
       resultAI.error?.message ||
@@ -1390,44 +1518,39 @@ async function saveEntry(
 
 
   // ===================================================
-  // J = COURIER VALUE
+  // SAVE J + K
   // ===================================================
   //
-  // IMPORTANT:
+  // J = current Courier
   //
-  // यहाँ कोई VLOOKUP FORMULA नहीं है.
+  // K = original Courier
   //
-  // सिर्फ Courier का VALUE save होगा.
-  //
-  // उदाहरण:
-  //
-  // J2 = DTDC
-  //
-  // न कि:
-  //
-  // =VLOOKUP(...)
+  // अगर पुराना Courier नहीं है,
+  // K खाली रहेगा.
   //
   // ===================================================
 
-  const rangeJ =
+  const rangeJK =
     encodeURIComponent(
       SHEET_NAME +
       "!J" +
+      rowToSave +
+      ":K" +
       rowToSave
     );
 
 
-  const urlJ =
+  const urlJK =
     "https://sheets.googleapis.com/v4/spreadsheets/" +
     SPREADSHEET_ID +
     "/values/" +
-    rangeJ +
+    rangeJK +
     "?valueInputOption=RAW";
 
 
-  const responseJ =
+  const responseJK =
     await fetch(
-      urlJ,
+      urlJK,
       {
 
         method: "PUT",
@@ -1452,7 +1575,8 @@ async function saveEntry(
             values:
               [
                 [
-                  courier
+                  courier,
+                  oldCourier
                 ]
               ]
 
@@ -1462,49 +1586,33 @@ async function saveEntry(
     );
 
 
-  const textJ =
-    await responseJ.text();
+  const textJK =
+    await responseJK.text();
 
 
-  let resultJ;
+  let resultJK;
 
 
   try {
 
-    resultJ =
-      JSON.parse(textJ);
+    resultJK =
+      JSON.parse(textJK);
 
   }
 
   catch {
 
     throw new Error(
-      "Courier save response invalid है"
+      "J:K response invalid है"
     );
 
   }
 
 
-  if (!responseJ.ok) {
-
-    if (
-      responseJ.status === 401 ||
-      responseJ.status === 403
-    ) {
-
-      accessToken = null;
-
-      localStorage.removeItem(
-        LOGIN_MEMORY_KEY
-      );
-
-      showLoginButton();
-
-    }
-
+  if (!responseJK.ok) {
 
     throw new Error(
-      resultJ.error?.message ||
+      resultJK.error?.message ||
       "Courier save नहीं हुआ"
     );
 
@@ -1595,7 +1703,7 @@ function beep() {
 
 function onScanFailure(error) {
 
-  // Ignore continuous scan errors
+  // Continuous scan errors ignored
 
 }
 
@@ -1604,3 +1712,4 @@ function onScanFailure(error) {
 </body>
 
 </html>
+```
