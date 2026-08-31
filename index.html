@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="hi">
+
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -487,12 +488,13 @@ async function testSheetAccess() {
 async function findNextEmptyRow() {
 
   debug(
-    "Finding next empty row from Row 2..."
+    "Finding next empty row based on Name Column (C)..."
   );
 
+  // सिर्फ Name वाले Column C को पढ़ेंगे
   const range =
     encodeURIComponent(
-      SHEET_NAME + "!A2:J"
+      SHEET_NAME + "!C2:C"
     );
 
   const url =
@@ -530,7 +532,7 @@ async function findNextEmptyRow() {
   catch (e) {
 
     throw new Error(
-      "Sheet rows response JSON नहीं है"
+      "Name Column response JSON नहीं है"
     );
 
   }
@@ -539,7 +541,7 @@ async function findNextEmptyRow() {
 
     throw new Error(
       result.error?.message ||
-      "Sheet rows पढ़ नहीं पाए"
+      "Name Column पढ़ नहीं पाए"
     );
 
   }
@@ -555,28 +557,14 @@ async function findNextEmptyRow() {
     i++
   ) {
 
-    const row =
-      values[i] || [];
+    const name =
+      values[i] &&
+      values[i][0] !== undefined
+        ? String(values[i][0]).trim()
+        : "";
 
-    let hasData = false;
-
-    for (
-      let j = 0;
-      j < row.length;
-      j++
-    ) {
-
-      if (
-        String(row[j] ?? "").trim() !== ""
-      ) {
-
-        hasData = true;
-        break;
-      }
-
-    }
-
-    if (!hasData) {
+    // अगर Name खाली है तो यही अगली Entry की Row होगी
+    if (name === "") {
 
       foundRow =
         i + 2;
@@ -585,6 +573,7 @@ async function findNextEmptyRow() {
 
     }
 
+    // Name मौजूद है तो अगली Row check करें
     foundRow =
       i + 3;
 
@@ -594,7 +583,7 @@ async function findNextEmptyRow() {
     Math.max(2, foundRow);
 
   debug(
-    "Next empty row: " +
+    "Next row based on Name Column C: " +
     nextRow
   );
 
