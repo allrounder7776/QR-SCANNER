@@ -39,11 +39,6 @@ button {
   cursor: pointer;
 }
 
-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
 #reader {
   width: 100%;
   max-width: 500px;
@@ -153,22 +148,6 @@ function showMessage(text, type) {
 
 
 // =====================================================
-// LOGIN BUTTON
-// =====================================================
-
-document
-  .getElementById("loginBtn")
-  .addEventListener(
-    "click",
-    function () {
-
-      connectGoogle();
-
-    }
-  );
-
-
-// =====================================================
 // PAGE LOAD
 // =====================================================
 
@@ -176,7 +155,6 @@ window.addEventListener(
   "load",
   function () {
 
-    // Google library को थोड़ा समय दें
     waitForGoogle();
 
   }
@@ -184,26 +162,13 @@ window.addEventListener(
 
 
 // =====================================================
-// WAIT FOR GOOGLE LIBRARY
+// WAIT FOR GOOGLE
 // =====================================================
 
 function waitForGoogle() {
 
-  if (
-    typeof google !== "undefined" &&
-    google.accounts &&
-    google.accounts.oauth2
-  ) {
-
-    initializeGoogle();
-
-    return;
-
-  }
-
-
-  // 5 सेकंड तक Google library का इंतजार
   let attempts = 0;
+
 
   const timer =
     setInterval(
@@ -227,7 +192,9 @@ function waitForGoogle() {
         }
 
 
-        if (attempts >= 50) {
+        if (
+          attempts >= 50
+        ) {
 
           clearInterval(timer);
 
@@ -268,20 +235,6 @@ function initializeGoogle() {
       });
 
 
-    // अब page ready है
-    document
-      .getElementById("loginBtn")
-      .disabled = false;
-
-
-    showMessage(
-      "🔐 Google Account Connect करें",
-      "info"
-    );
-
-
-    // अगर पहले connection हुआ था,
-    // तो automatic silent connection की कोशिश करें
     const remembered =
       localStorage.getItem(
         LOGIN_MEMORY_KEY
@@ -292,13 +245,15 @@ function initializeGoogle() {
       remembered === "YES"
     ) {
 
-      setTimeout(
-        function () {
+      silentConnect();
 
-          silentConnect();
+    }
 
-        },
-        300
+    else {
+
+      showMessage(
+        "🔐 Google Account Connect करें",
+        "info"
       );
 
     }
@@ -320,12 +275,30 @@ function initializeGoogle() {
 
 
 // =====================================================
+// LOGIN BUTTON
+// =====================================================
+
+document
+  .getElementById("loginBtn")
+  .addEventListener(
+    "click",
+    function () {
+
+      connectGoogle();
+
+    }
+  );
+
+
+// =====================================================
 // SILENT CONNECT
 // =====================================================
 
 function silentConnect() {
 
   if (!tokenClient) {
+
+    showLoginButton();
 
     return;
 
@@ -358,7 +331,7 @@ function silentConnect() {
 
 
 // =====================================================
-// NORMAL GOOGLE CONNECT
+// NORMAL CONNECT
 // =====================================================
 
 function connectGoogle() {
@@ -366,11 +339,9 @@ function connectGoogle() {
   if (!tokenClient) {
 
     showMessage(
-      "⏳ Google Login अभी तैयार हो रहा है...",
+      "⏳ Google Login तैयार हो रहा है...",
       "info"
     );
-
-    waitForGoogle();
 
     return;
 
@@ -394,8 +365,6 @@ function connectGoogle() {
   }
 
   catch (error) {
-
-    console.error(error);
 
     showMessage(
       "❌ Google authorization शुरू नहीं हो सका",
@@ -444,10 +413,7 @@ function handleTokenResponse(response) {
     );
 
 
-    document
-      .getElementById("loginBtn")
-      .style.display =
-      "inline-block";
+    showLoginButton();
 
 
     showMessage(
@@ -472,19 +438,10 @@ function handleTokenResponse(response) {
 
     showLoginButton();
 
-    showMessage(
-      "❌ Access token नहीं मिला",
-      "error"
-    );
-
     return;
 
   }
 
-
-  // ===================================================
-  // TOKEN RECEIVED
-  // ===================================================
 
   accessToken =
     response.access_token;
@@ -514,7 +471,7 @@ function handleTokenResponse(response) {
 
 
 // =====================================================
-// TEST SHEET ACCESS
+// TEST SHEET
 // =====================================================
 
 async function testSheetAccess() {
@@ -605,7 +562,8 @@ async function testSheetAccess() {
       result.sheets || [];
 
 
-    let found = false;
+    let found =
+      false;
 
 
     for (
@@ -614,12 +572,9 @@ async function testSheetAccess() {
       i++
     ) {
 
-      const title =
-        sheets[i].properties?.title;
-
-
       if (
-        title === SHEET_NAME
+        sheets[i].properties?.title ===
+        SHEET_NAME
       ) {
 
         found = true;
@@ -640,10 +595,9 @@ async function testSheetAccess() {
     }
 
 
-    // =================================================
-    // IMPORTANT
-    // Row 2 से पहली खाली Name Row
-    // =================================================
+    // ===============================================
+    // FIRST EMPTY NAME ROW
+    // ===============================================
 
     await findNextEmptyRow();
 
@@ -683,10 +637,10 @@ async function testSheetAccess() {
 
 
 // =====================================================
-// CLEAN NAME
+// CLEAN VALUE
 // =====================================================
 
-function cleanNameValue(value) {
+function cleanValue(value) {
 
   if (
     value === null ||
@@ -717,19 +671,22 @@ function cleanNameValue(value) {
 // FIND NEXT EMPTY ROW
 // =====================================================
 //
-// ONLY COLUMN C = NAME
+// MASTER COLUMN = C
 //
-// C2 → C3 → C4 → C5...
+// C2 खाली = Row 2
 //
-// पहली खाली C cell = नई Entry
+// C2 भरी
+// C3 खाली = Row 3
 //
-// Column J Courier को बिल्कुल नहीं देखा जाता.
+// C2-C530 भरी
+// C531 खाली = Row 531
+//
+// J Courier का इस calculation से कोई संबंध नहीं
 //
 // =====================================================
 
 async function findNextEmptyRow() {
 
-  // हमेशा reset
   nextRow = 2;
 
 
@@ -801,7 +758,7 @@ async function findNextEmptyRow() {
   }
 
 
-  const columnValues =
+  const values =
     (
       result.values &&
       result.values[0]
@@ -810,13 +767,9 @@ async function findNextEmptyRow() {
       : [];
 
 
-  // ===================================================
-  // IMPORTANT
-  //
-  // i = 0 => Row 2
-  // i = 1 => Row 3
-  // i = 2 => Row 4
-  // ===================================================
+  // ===============================================
+  // C2 से पहली खाली cell
+  // ===============================================
 
   for (
     let i = 0;
@@ -825,18 +778,15 @@ async function findNextEmptyRow() {
   ) {
 
     const value =
-      columnValues[i] !== undefined
-        ? columnValues[i]
+      values[i] !== undefined
+        ? values[i]
         : "";
 
 
     const name =
-      cleanNameValue(
-        value
-      );
+      cleanValue(value);
 
 
-    // पहली खाली Name cell
     if (
       name === ""
     ) {
@@ -851,8 +801,8 @@ async function findNextEmptyRow() {
   }
 
 
-  // C2:C1000 सभी भरी हुई हैं
-  nextRow = 1001;
+  nextRow =
+    1001;
 
 }
 
@@ -971,16 +921,12 @@ async function onScanSuccess(
 
   try {
 
-    // =================================================
-    // SCAN के तुरंत पहले C column दोबारा check
-    // =================================================
+    // ===============================================
+    // SCAN के ठीक पहले ROW दोबारा calculate
+    // ===============================================
 
     await findNextEmptyRow();
 
-
-    // =================================================
-    // ROW LOCK
-    // =================================================
 
     const rowToSave =
       nextRow;
@@ -991,10 +937,6 @@ async function onScanSuccess(
         decodedText
       );
 
-
-    // =================================================
-    // SAVE
-    // =================================================
 
     await saveToGoogleSheet(
       row,
@@ -1013,11 +955,6 @@ async function onScanSuccess(
 
     beep();
 
-
-    // =================================================
-    // अगली scan के लिए
-    // फिर से C column check होगा
-    // =================================================
 
     nextRow =
       rowToSave + 1;
@@ -1102,9 +1039,9 @@ function convertQRToRow(qrText) {
   }
 
 
-  // ===================================================
+  // ===============================================
   // JSON QR
-  // ===================================================
+  // ===============================================
 
   if (
     data &&
@@ -1158,9 +1095,9 @@ function convertQRToRow(qrText) {
   }
 
 
-  // ===================================================
+  // ===============================================
   // NON JSON QR
-  // ===================================================
+  // ===============================================
 
   return [
 
@@ -1205,9 +1142,9 @@ async function saveToGoogleSheet(
   }
 
 
-  // ===================================================
-  // EXISTING ROW READ
-  // ===================================================
+  // =================================================
+  // EXISTING A:I READ
+  // =================================================
 
   const readRange =
     encodeURIComponent(
@@ -1287,9 +1224,9 @@ async function saveToGoogleSheet(
       : [];
 
 
-  // ===================================================
+  // =================================================
   // EXISTING AWB
-  // ===================================================
+  // =================================================
 
   const existingAWB =
     existingRow[1] !== undefined
@@ -1307,9 +1244,9 @@ async function saveToGoogleSheet(
       : "";
 
 
-  // ===================================================
+  // =================================================
   // FINAL A:I
-  // ===================================================
+  // =================================================
 
   const finalRow = [
 
@@ -1352,9 +1289,11 @@ async function saveToGoogleSheet(
   ];
 
 
-  // ===================================================
-  // WRITE A:I
-  // ===================================================
+  // =================================================
+  // WRITE ONLY A:I
+  //
+  // J को इस request में touch नहीं किया जाएगा
+  // =================================================
 
   const rangeAI =
     encodeURIComponent(
@@ -1462,13 +1401,33 @@ async function saveToGoogleSheet(
   }
 
 
-  // ===================================================
-  // COURIER = COLUMN J
-  // ===================================================
+  // =================================================
+  // COURIER FORMULA = J
+  // =================================================
+
+  await setCourierFormula(
+    rowToSave
+  );
+
+}
+
+
+// =====================================================
+// SET COURIER FORMULA
+// =====================================================
+//
+// J में केवल इसी row का formula लगाया जाएगा.
+//
+// Formula:
+// =IFERROR(VLOOKUP(D[row],'PIN CODE'!A:B,2,FALSE),"")
+//
+// =====================================================
+
+async function setCourierFormula(rowNumber) {
 
   const courierFormula =
     "=IFERROR(VLOOKUP(D" +
-    rowToSave +
+    rowNumber +
     ",'PIN CODE'!A:B,2,FALSE),\"\")";
 
 
@@ -1476,7 +1435,7 @@ async function saveToGoogleSheet(
     encodeURIComponent(
       SHEET_NAME +
       "!J" +
-      rowToSave
+      rowNumber
     );
 
 
@@ -1561,11 +1520,7 @@ async function saveToGoogleSheet(
         LOGIN_MEMORY_KEY
       );
 
-
-      document
-        .getElementById("loginBtn")
-        .style.display =
-        "inline-block";
+      showLoginButton();
 
     }
 
@@ -1668,7 +1623,7 @@ function beep() {
 
 function onScanFailure(error) {
 
-  // Continuous scan errors ignore करें
+  // Continuous QR scan errors ignore
 
 }
 
