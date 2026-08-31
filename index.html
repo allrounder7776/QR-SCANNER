@@ -100,6 +100,9 @@ const SPREADSHEET_ID =
 const SHEET_NAME =
 "Sheet1";
 
+const PIN_SHEET_NAME =
+"PIN CODE";
+
 const SHEETS_SCOPE =
 "https://www.googleapis.com/auth/spreadsheets";
 
@@ -254,7 +257,7 @@ function autoConnect() {
 
 
 // =====================================================
-// SHOW LOGIN
+// SHOW LOGIN BUTTON
 // =====================================================
 
 function showLoginButton() {
@@ -467,7 +470,9 @@ async function testSheetAccess() {
       result.sheets || [];
 
 
-    let found = false;
+    let mainSheetFound = false;
+
+    let pinSheetFound = false;
 
 
     for (
@@ -476,22 +481,43 @@ async function testSheetAccess() {
       i++
     ) {
 
+      const title =
+        sheets[i].properties?.title;
+
+
       if (
-        sheets[i].properties?.title ===
-        SHEET_NAME
+        title === SHEET_NAME
       ) {
 
-        found = true;
+        mainSheetFound = true;
+
+      }
+
+
+      if (
+        title === PIN_SHEET_NAME
+      ) {
+
+        pinSheetFound = true;
 
       }
 
     }
 
 
-    if (!found) {
+    if (!mainSheetFound) {
 
       throw new Error(
         "Sheet1 नहीं मिली"
+      );
+
+    }
+
+
+    if (!pinSheetFound) {
+
+      throw new Error(
+        "PIN CODE sheet नहीं मिली"
       );
 
     }
@@ -535,9 +561,11 @@ async function testSheetAccess() {
 // FIND NEXT ENTRY ROW
 // =====================================================
 //
-// केवल Column C = Name को master माना गया है.
+// ONLY Column C = Name
 //
-// Row 2 से check होगा.
+// Row 2 से शुरू होगा.
+//
+// पहली खाली C row = नई Entry Row.
 //
 // J Courier को बिल्कुल check नहीं किया जाएगा.
 //
@@ -617,6 +645,10 @@ async function findNextEmptyRow() {
     result.values || [];
 
 
+  // ===================================================
+  // ROW 2 से पहली खाली C row
+  // ===================================================
+
   for (
     let i = 0;
     i < values.length;
@@ -645,6 +677,10 @@ async function findNextEmptyRow() {
 
   }
 
+
+  // ===================================================
+  // अगर कोई खाली C row नहीं मिली
+  // ===================================================
 
   nextRow =
     values.length + 2;
@@ -766,7 +802,11 @@ async function onScanSuccess(
 
   try {
 
-    // Scan के समय फिर से Column C check करें
+    // =================================================
+    // IMPORTANT:
+    // Scan के ठीक समय C Column दोबारा check
+    // =================================================
+
     await findNextEmptyRow();
 
 
@@ -781,14 +821,44 @@ async function onScanSuccess(
 
 
     // =================================================
-    // IMPORTANT:
-    // सिर्फ A:I में save होगा.
-    // J को HTML बिल्कुल touch नहीं करेगा.
+    // PIN CODE से COURIER निकालना
+    //
+    // D = PIN CODE
+    // PIN CODE!A:B = Lookup table
+    // J = Courier VALUE
+    // =================================================
+
+    const pinCode =
+      row[3] !== undefined
+        ? String(
+            row[3]
+          ).trim()
+        : "";
+
+
+    let courier = "";
+
+
+    if (
+      pinCode !== ""
+    ) {
+
+      courier =
+        await findCourierByPin(
+          pinCode
+        );
+
+    }
+
+
+    // =================================================
+    // A:I + J VALUE SAVE
     // =================================================
 
     await saveToGoogleSheet(
       row,
-      rowToSave
+      rowToSave,
+      courier
     );
 
 
@@ -857,6 +927,136 @@ async function onScanSuccess(
     );
 
   }
+
+}
+
+
+// =====================================================
+// FIND COURIER BY PIN
+// =====================================================
+//
+// Equivalent logic:
+//
+// =VLOOKUP(D:D,'PIN CODE'!A:B,2,0)
+//
+// लेकिन यहाँ formula नहीं लगाया जा रहा.
+//
+// सिर्फ matching Courier VALUE निकाली जाएगी.
+//
+// =====================================================
+
+async function findCourierByPin(pinCode) {
+
+  const range =
+    encodeURIComponent(
+      PIN_SHEET_NAME + "!A:B"
+    );
+
+
+  const url =
+    "https://sheets.googleapis.com/v4/spreadsheets/" +
+    SPREADSHEET_ID +
+    "/values/" +
+    range;
+
+
+  const response =
+    await fetch(
+      url,
+      {
+
+        method: "GET",
+
+        headers: {
+
+          "Authorization":
+            "Bearer " +
+            accessToken
+
+        }
+
+      }
+    );
+
+
+  const text =
+    await response.text();
+
+
+  let result;
+
+
+  try {
+
+    result =
+      JSON.parse(text);
+
+  }
+
+  catch (e) {
+
+    throw new Error(
+      "PIN CODE data JSON नहीं है"
+    );
+
+  }
+
+
+  if (!response.ok) {
+
+    throw new Error(
+      result.error?.message ||
+      "PIN CODE sheet पढ़ नहीं पाए"
+    );
+
+  }
+
+
+  const values =
+    result.values || [];
+
+
+  const searchPin =
+    String(
+      pinCode
+    ).trim();
+
+
+  for (
+    let i = 0;
+    i < values.length;
+    i++
+  ) {
+
+    const pin =
+      values[i] &&
+      values[i][0] !== undefined
+        ? String(
+            values[i][0]
+          ).trim()
+        : "";
+
+
+    if (
+      pin === searchPin
+    ) {
+
+      const courier =
+        values[i][1] !== undefined
+          ? String(
+              values[i][1]
+            ).trim()
+          : "";
+
+
+      return courier;
+
+    }
+
+  }
+
+
+  return "";
 
 }
 
@@ -977,15 +1177,18 @@ function convertQRToRow(qrText) {
 //
 // IMPORTANT:
 //
-// यह function केवल A:I लिखता है.
+// A:I = QR ENTRY
 //
-// J COLUMN को यह function बिल्कुल नहीं छूता.
+// J = COURIER VALUE
+//
+// J में कोई formula नहीं है.
 //
 // =====================================================
 
 async function saveToGoogleSheet(
   row,
-  rowToSave
+  rowToSave,
+  courier
 ) {
 
   if (!accessToken) {
@@ -1255,32 +1458,118 @@ async function saveToGoogleSheet(
 
 
   // ===================================================
-  // SUCCESS
+  // WRITE COURIER VALUE TO J
+  // ===================================================
+  //
+  // यहाँ कोई VLOOKUP FORMULA नहीं है.
+  //
+  // सिर्फ actual Courier name/value J में जाएगा.
+  //
   // ===================================================
 
-  const updatedRows =
-    Number(
-      resultAI.updatedRows ||
-      resultAI.updates?.updatedRows ||
-      0
+  const rangeJ =
+    encodeURIComponent(
+      SHEET_NAME +
+      "!J" +
+      rowToSave
     );
 
 
-  const updatedCells =
-    Number(
-      resultAI.updatedCells ||
-      resultAI.updates?.updatedCells ||
-      0
+  const urlJ =
+    "https://sheets.googleapis.com/v4/spreadsheets/" +
+    SPREADSHEET_ID +
+    "/values/" +
+    rangeJ +
+    "?valueInputOption=USER_ENTERED";
+
+
+  const responseJ =
+    await fetch(
+      urlJ,
+      {
+
+        method: "PUT",
+
+        headers: {
+
+          "Authorization":
+            "Bearer " +
+            accessToken,
+
+          "Content-Type":
+            "application/json"
+
+        },
+
+        body:
+          JSON.stringify({
+
+            majorDimension:
+              "ROWS",
+
+            values:
+              [
+                [
+                  courier
+                ]
+              ]
+
+          })
+
+      }
     );
 
 
-  if (
-    updatedRows < 1 ||
-    updatedCells < 1
-  ) {
+  const textJ =
+    await responseJ.text();
+
+
+  let resultJ;
+
+
+  try {
+
+    resultJ =
+      JSON.parse(textJ);
+
+  }
+
+  catch (e) {
 
     throw new Error(
-      "API ने कोई A:I cell update नहीं किया"
+      "Courier response invalid है"
+    );
+
+  }
+
+
+  if (!responseJ.ok) {
+
+    if (
+      responseJ.status === 401 ||
+      responseJ.status === 403
+    ) {
+
+      accessToken = null;
+
+      localStorage.removeItem(
+        LOGIN_MEMORY_KEY
+      );
+
+      showLoginButton();
+
+    }
+
+
+    throw new Error(
+
+      resultJ.error?.message ||
+
+      (
+        "Courier save error HTTP " +
+        responseJ.status
+      )
+
     );
 
   }
