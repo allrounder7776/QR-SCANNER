@@ -3,12 +3,16 @@
 <html lang="hi">
 
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
 
 <title>QR Scanner - Google Sheets</title>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
+
 <script src="https://accounts.google.com/gsi/client"></script>
 
 <style>
@@ -33,6 +37,11 @@ button {
   background: #4285f4;
   color: white;
   cursor: pointer;
+}
+
+button:disabled {
+  background: #999;
+  cursor: not-allowed;
 }
 
 #reader {
@@ -77,7 +86,7 @@ button {
 <div id="reader"></div>
 
 <div id="message" class="info">
-पहले Google Account Connect करें
+Google Account check हो रहा है...
 </div>
 
 
@@ -114,8 +123,15 @@ let scanning = false;
 
 let saving = false;
 
-// नई Entry की Row
 let nextRow = 2;
+
+
+// =====================================================
+// AUTO LOGIN MEMORY
+// =====================================================
+
+const LOGIN_MEMORY_KEY =
+"qr_scanner_google_connected";
 
 
 // =====================================================
@@ -143,36 +159,72 @@ window.addEventListener(
   "load",
   function () {
 
-    if (
-      typeof google === "undefined" ||
-      !google.accounts ||
-      !google.accounts.oauth2
-    ) {
+    initializeGoogle();
 
-      showMessage(
-        "❌ Google Login library load नहीं हुई",
-        "error"
-      );
-
-      return;
-
-    }
+  }
+);
 
 
-    tokenClient =
-      google.accounts.oauth2.initTokenClient({
+// =====================================================
+// INITIALIZE GOOGLE
+// =====================================================
 
-        client_id:
-          CLIENT_ID,
+function initializeGoogle() {
 
-        scope:
-          SHEETS_SCOPE,
+  if (
+    typeof google === "undefined" ||
+    !google.accounts ||
+    !google.accounts.oauth2
+  ) {
 
-        callback:
-          handleTokenResponse
+    showMessage(
+      "❌ Google Login library load नहीं हुई",
+      "error"
+    );
 
-      });
+    return;
 
+  }
+
+
+  tokenClient =
+    google.accounts.oauth2.initTokenClient({
+
+      client_id:
+        CLIENT_ID,
+
+      scope:
+        SHEETS_SCOPE,
+
+      callback:
+        handleTokenResponse
+
+    });
+
+
+  /*
+   * अगर पहले इस browser में Google authorization
+   * हो चुका है तो automatic reconnect की कोशिश करें।
+   */
+
+  const remembered =
+    localStorage.getItem(
+      LOGIN_MEMORY_KEY
+    );
+
+
+  if (remembered === "YES") {
+
+    showMessage(
+      "🔄 Google Account automatically connect हो रहा है...",
+      "info"
+    );
+
+    autoConnect();
+
+  }
+
+  else {
 
     showMessage(
       "🔐 Google Account Connect करें",
@@ -180,7 +232,70 @@ window.addEventListener(
     );
 
   }
-);
+
+}
+
+
+// =====================================================
+// AUTO CONNECT
+// =====================================================
+
+function autoConnect() {
+
+  if (!tokenClient) {
+
+    showMessage(
+      "🔐 Google Account Connect करें",
+      "info"
+    );
+
+    return;
+
+  }
+
+
+  try {
+
+    /*
+     * Empty prompt का मतलब:
+     * अगर authorization पहले से दी हुई है,
+     * तो दोबारा consent मांगने की कोशिश न करें।
+     */
+
+    tokenClient.requestAccessToken({
+
+      prompt: ""
+
+    });
+
+  }
+
+  catch (error) {
+
+    showLoginButton();
+
+  }
+
+}
+
+
+// =====================================================
+// SHOW LOGIN BUTTON
+// =====================================================
+
+function showLoginButton() {
+
+  document
+    .getElementById("loginBtn")
+    .style.display =
+    "inline-block";
+
+  showMessage(
+    "🔐 Google Account Connect करें",
+    "info"
+  );
+
+}
 
 
 // =====================================================
@@ -196,7 +311,7 @@ document
       if (!tokenClient) {
 
         showMessage(
-          "❌ OAuth अभी तैयार नहीं है",
+          "❌ Google Login अभी तैयार नहीं है",
           "error"
         );
 
@@ -231,6 +346,12 @@ function handleTokenResponse(response) {
 
     accessToken = null;
 
+    localStorage.removeItem(
+      LOGIN_MEMORY_KEY
+    );
+
+    showLoginButton();
+
     showMessage(
       "❌ Google authorization failed<br>" +
       (
@@ -247,6 +368,10 @@ function handleTokenResponse(response) {
 
   if (!response.access_token) {
 
+    accessToken = null;
+
+    showLoginButton();
+
     showMessage(
       "❌ Access token नहीं मिला",
       "error"
@@ -257,8 +382,23 @@ function handleTokenResponse(response) {
   }
 
 
+  // =================================================
+  // TOKEN SUCCESS
+  // =================================================
+
   accessToken =
     response.access_token;
+
+
+  /*
+   * Browser को याद रहेगा कि इस user ने
+   * Google authorization दिया था।
+   */
+
+  localStorage.setItem(
+    LOGIN_MEMORY_KEY,
+    "YES"
+  );
 
 
   document
@@ -268,7 +408,7 @@ function handleTokenResponse(response) {
 
 
   showMessage(
-    "✅ Google Account Connected<br>⏳ Sheet access test हो रहा है...",
+    "✅ Google Account Connected<br>⏳ Sheet access check हो रहा है...",
     "success"
   );
 
@@ -335,6 +475,25 @@ async function testSheetAccess() {
 
     if (!response.ok) {
 
+      /*
+       * अगर token invalid है,
+       * तो remembered login हटाएँ।
+       */
+
+      if (
+        response.status === 401 ||
+        response.status === 403
+      ) {
+
+        accessToken = null;
+
+        localStorage.removeItem(
+          LOGIN_MEMORY_KEY
+        );
+
+      }
+
+
       throw new Error(
         result.error?.message ||
         "Spreadsheet access failed"
@@ -382,14 +541,14 @@ async function testSheetAccess() {
 
 
     // =================================================
-    // LAST NAME के आधार पर नई ROW खोजें
+    // LAST NAME के आधार पर NEXT ROW
     // =================================================
 
     await findNextEmptyRow();
 
 
     showMessage(
-      "✅ Google Sheet Connected<br>📷 अब QR Scan करें",
+      "✅ Google Account Connected<br>📷 अब QR Scan करें",
       "success"
     );
 
@@ -410,6 +569,20 @@ async function testSheetAccess() {
       "error"
     );
 
+
+    /*
+     * Invalid token होने पर manual reconnect button
+     * वापस दिखाएँ।
+     */
+
+    if (
+      !accessToken
+    ) {
+
+      showLoginButton();
+
+    }
+
   }
 
 }
@@ -419,17 +592,17 @@ async function testSheetAccess() {
 // FIND NEXT ENTRY ROW
 // =====================================================
 //
-// नई Entry हमेशा Column C में मौजूद
-// LAST NAME वाली Row के ठीक नीचे जाएगी.
+// नई Entry:
+// Column C में LAST NAME वाली Row + 1
 //
-// उदाहरण:
+// Example:
 //
 // C459 = Rahul
 // C460 = Amit
 // C461 = Mohit
 // C462 = खाली
 //
-// नई Entry = Row 462
+// New Entry = Row 462
 //
 // =====================================================
 
@@ -492,6 +665,19 @@ async function findNextEmptyRow() {
 
   if (!response.ok) {
 
+    if (
+      response.status === 401
+    ) {
+
+      accessToken = null;
+
+      localStorage.removeItem(
+        LOGIN_MEMORY_KEY
+      );
+
+    }
+
+
     throw new Error(
       result.error?.message ||
       "Name Column पढ़ नहीं पाए"
@@ -504,7 +690,6 @@ async function findNextEmptyRow() {
     result.values || [];
 
 
-  // Default
   let lastNameRow = 1;
 
 
@@ -527,10 +712,6 @@ async function findNextEmptyRow() {
 
     if (name !== "") {
 
-      // C2 = Row 2
-      // C3 = Row 3
-      // आदि...
-
       lastNameRow =
         i + 2;
 
@@ -540,11 +721,12 @@ async function findNextEmptyRow() {
 
 
   // ---------------------------------------------------
-  // Last Name वाली Row के ठीक नीचे
-  // नई Entry
+  // Last Name + 1
   // ---------------------------------------------------
 
-  if (lastNameRow < 2) {
+  if (
+    lastNameRow < 2
+  ) {
 
     nextRow = 2;
 
@@ -680,17 +862,13 @@ async function onScanSuccess(
       );
 
 
+    const savedRow =
+      nextRow;
+
+
     await saveToGoogleSheet(
       row
     );
-
-
-    // -------------------------------------------------
-    // Save हुई Row
-    // -------------------------------------------------
-
-    const savedRow =
-      nextRow - 1;
 
 
     showMessage(
@@ -886,7 +1064,7 @@ async function saveToGoogleSheet(row) {
   if (!accessToken) {
 
     throw new Error(
-      "Access token मौजूद नहीं है"
+      "Google Account Connected नहीं है"
     );
 
   }
@@ -960,6 +1138,19 @@ async function saveToGoogleSheet(row) {
 
 
   if (!readResponse.ok) {
+
+    if (
+      readResponse.status === 401
+    ) {
+
+      accessToken = null;
+
+      localStorage.removeItem(
+        LOGIN_MEMORY_KEY
+      );
+
+    }
+
 
     throw new Error(
       readResult.error?.message ||
@@ -1133,9 +1324,15 @@ async function saveToGoogleSheet(row) {
 
   if (!response.ok) {
 
-    if (response.status === 401) {
+    if (
+      response.status === 401
+    ) {
 
       accessToken = null;
+
+      localStorage.removeItem(
+        LOGIN_MEMORY_KEY
+      );
 
 
       document
