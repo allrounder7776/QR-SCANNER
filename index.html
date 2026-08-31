@@ -70,6 +70,7 @@ button {
 
 </head>
 
+
 <body>
 
 <h2>📷 QR Scanner</h2>
@@ -264,6 +265,7 @@ function showLoginButton() {
     .style.display =
     "inline-block";
 
+
   showMessage(
     "🔐 Google Account Connect करें",
     "info"
@@ -384,7 +386,7 @@ function handleTokenResponse(response) {
 
 
 // =====================================================
-// TEST SHEET
+// TEST SHEET ACCESS
 // =====================================================
 
 async function testSheetAccess() {
@@ -496,10 +498,6 @@ async function testSheetAccess() {
     }
 
 
-    // =================================================
-    // FIND NEXT ROW USING ONLY COLUMN C
-    // =================================================
-
     await findNextEmptyRow();
 
 
@@ -535,24 +533,26 @@ async function testSheetAccess() {
 
 
 // =====================================================
-// FIND NEXT ROW
+// FIND NEXT ENTRY ROW
 // =====================================================
 //
 // IMPORTANT:
 //
 // केवल Column C = Name को master माना गया है.
 //
-// Row 2 से नीचे check होगा.
+// Row 2 से शुरू होगा.
 //
-// जिस आखिरी Row में Name है,
-// उसके ठीक नीचे नई Entry जाएगी.
+// पहली खाली Name वाली Row = नई Entry Row.
 //
-// J Courier formula का Row selection
-// पर कोई असर नहीं होगा.
+// J Courier formula को बिल्कुल check नहीं किया जाएगा.
 //
 // =====================================================
 
 async function findNextEmptyRow() {
+
+  // हर बार Row 2 से शुरू करें
+  nextRow = 2;
+
 
   const range =
     encodeURIComponent(
@@ -603,7 +603,7 @@ async function findNextEmptyRow() {
   catch (e) {
 
     throw new Error(
-      "Name Column पढ़ने में error आया"
+      "Column C response JSON नहीं है"
     );
 
   }
@@ -623,11 +623,10 @@ async function findNextEmptyRow() {
     result.values || [];
 
 
-  // Default Row = 2
-  let lastNameRow = 1;
+  // ===================================================
+  // ROW 2 से पहली खाली Name Row
+  // ===================================================
 
-
-  // C2 से check
   for (
     let i = 0;
     i < values.length;
@@ -637,27 +636,33 @@ async function findNextEmptyRow() {
     const name =
       values[i] &&
       values[i][0] !== undefined
-        ? String(values[i][0]).trim()
+        ? String(
+            values[i][0]
+          ).trim()
         : "";
 
 
-    if (name !== "") {
+    // पहली खाली C row मिल गई
+    if (
+      name === ""
+    ) {
 
-      // वास्तविक Sheet Row
-      lastNameRow =
+      nextRow =
         i + 2;
+
+      return;
 
     }
 
   }
 
 
-  // आखिरी Name वाली Row के बाद वाली Row
+  // ===================================================
+  // अगर C2 से नीचे कोई खाली row नहीं है
+  // ===================================================
+
   nextRow =
-    Math.max(
-      2,
-      lastNameRow + 1
-    );
+    values.length + 2;
 
 }
 
@@ -776,31 +781,47 @@ async function onScanSuccess(
 
   try {
 
+    // =================================================
+    // IMPORTANT:
+    // Scan होने के बाद फिर से Column C check करें
+    // ताकि stale/random nextRow की समस्या न हो.
+    // =================================================
+
+    await findNextEmptyRow();
+
+
+    // जिस Row में save करना है उसे LOCK करें
+    const rowToSave =
+      nextRow;
+
+
     const row =
       convertQRToRow(
         decodedText
       );
 
 
-    const savedRow =
-      nextRow;
-
-
     await saveToGoogleSheet(
-      row
+      row,
+      rowToSave
     );
 
 
     showMessage(
       "✅ Entry Successfully Save हो गई<br>" +
       "Row No: " +
-      savedRow +
+      rowToSave +
       "<br>🚚 Courier भी update हो गया",
       "success"
     );
 
 
     beep();
+
+
+    // अगली scan के लिए
+    nextRow =
+      rowToSave + 1;
 
 
     setTimeout(
@@ -971,7 +992,10 @@ function convertQRToRow(qrText) {
 // SAVE TO GOOGLE SHEETS
 // =====================================================
 
-async function saveToGoogleSheet(row) {
+async function saveToGoogleSheet(
+  row,
+  rowToSave
+) {
 
   if (!accessToken) {
 
@@ -982,13 +1006,8 @@ async function saveToGoogleSheet(row) {
   }
 
 
-  // Current selected row
-  const rowToSave =
-    nextRow;
-
-
   // ===================================================
-  // EXISTING AWB READ
+  // EXISTING ROW READ
   // ===================================================
 
   const readRange =
@@ -1070,7 +1089,7 @@ async function saveToGoogleSheet(row) {
 
 
   // ===================================================
-  // AWB
+  // EXISTING AWB
   // ===================================================
 
   const existingAWB =
@@ -1090,7 +1109,7 @@ async function saveToGoogleSheet(row) {
 
 
   // ===================================================
-  // A:I
+  // FINAL A:I ROW
   // ===================================================
 
   const finalRow = [
@@ -1174,7 +1193,6 @@ async function saveToGoogleSheet(row) {
 
         },
 
-
         body:
           JSON.stringify({
 
@@ -1243,7 +1261,7 @@ async function saveToGoogleSheet(row) {
 
 
   // ===================================================
-  // COURIER FORMULA IN J
+  // COURIER = J
   // ===================================================
 
   const courierFormula =
@@ -1285,7 +1303,6 @@ async function saveToGoogleSheet(row) {
             "application/json"
 
         },
-
 
         body:
           JSON.stringify({
@@ -1362,14 +1379,6 @@ async function saveToGoogleSheet(row) {
     );
 
   }
-
-
-  // ===================================================
-  // NEXT ROW
-  // ===================================================
-
-  nextRow =
-    rowToSave + 1;
 
 }
 
