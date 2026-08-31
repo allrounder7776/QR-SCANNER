@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="hi">
 
@@ -123,6 +124,7 @@ let scanner = null;
 let scanning = false;
 let saving = false;
 
+// नई Entry Row
 let nextRow = 2;
 
 
@@ -450,6 +452,11 @@ async function testSheetAccess() {
       "Sheet1: FOUND"
     );
 
+    // =================================================
+    // IMPORTANT:
+    // LAST NAME के आधार पर नई ROW खोजेंगे
+    // =================================================
+
     await findNextEmptyRow();
 
     showMessage(
@@ -482,16 +489,20 @@ async function testSheetAccess() {
 
 
 // =====================================================
-// FIND NEXT EMPTY ROW
+// FIND NEXT ENTRY ROW BASED ON LAST NAME
 // =====================================================
 
 async function findNextEmptyRow() {
 
   debug(
-    "Finding next empty row based on Name Column (C)..."
+    "Finding NEXT Entry Row based on LAST Name in Column C..."
   );
 
-  // सिर्फ Name वाले Column C को पढ़ेंगे
+  // ---------------------------------------------------
+  // सिर्फ Column C यानी NAME पढ़ेंगे
+  // C2:C
+  // ---------------------------------------------------
+
   const range =
     encodeURIComponent(
       SHEET_NAME + "!C2:C"
@@ -549,7 +560,15 @@ async function findNextEmptyRow() {
   const values =
     result.values || [];
 
-  let foundRow = 2;
+  // ---------------------------------------------------
+  // Last Name वाली Row
+  // ---------------------------------------------------
+
+  let lastNameRow = 1;
+
+  // ---------------------------------------------------
+  // Column C में नीचे तक सभी values check करें
+  // ---------------------------------------------------
 
   for (
     let i = 0;
@@ -563,27 +582,44 @@ async function findNextEmptyRow() {
         ? String(values[i][0]).trim()
         : "";
 
-    // अगर Name खाली है तो यही अगली Entry की Row होगी
-    if (name === "") {
+    if (name !== "") {
 
-      foundRow =
+      // C2 = Row 2
+      // C3 = Row 3
+      // etc.
+
+      lastNameRow =
         i + 2;
-
-      break;
 
     }
 
-    // Name मौजूद है तो अगली Row check करें
-    foundRow =
-      i + 3;
+  }
+
+  // ---------------------------------------------------
+  // LAST NAME वाली Row के ठीक नीचे
+  // नई Entry जाएगी
+  // ---------------------------------------------------
+
+  if (lastNameRow < 2) {
+
+    nextRow = 2;
 
   }
 
-  nextRow =
-    Math.max(2, foundRow);
+  else {
+
+    nextRow =
+      lastNameRow + 1;
+
+  }
 
   debug(
-    "Next row based on Name Column C: " +
+    "Last Name Row: " +
+    lastNameRow
+  );
+
+  debug(
+    "NEXT ENTRY ROW: " +
     nextRow
   );
 
@@ -731,6 +767,10 @@ async function onScanSuccess(
       JSON.stringify(row)
     );
 
+    // -------------------------------------------------
+    // SAVE
+    // -------------------------------------------------
+
     await saveToGoogleSheet(
       row
     );
@@ -739,10 +779,18 @@ async function onScanSuccess(
       "API SAVE: SUCCESS"
     );
 
+    // -------------------------------------------------
+    // IMPORTANT:
+    // अब nextRow को नहीं बल्कि saved row को दिखाएँ
+    // -------------------------------------------------
+
+    const savedRow =
+      nextRow - 1;
+
     showMessage(
       "✅ Entry Successfully Save हो गई<br>" +
       "Row No: " +
-      (nextRow - 1) +
+      savedRow +
       "<br>🔒 AWB और Courier सुरक्षित हैं",
       "success"
     );
@@ -1302,3 +1350,4 @@ function onScanFailure(error) {
 
 </body>
 </html>
+```
