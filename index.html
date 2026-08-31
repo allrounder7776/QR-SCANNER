@@ -103,7 +103,7 @@ Diagnostic शुरू नहीं हुआ...
 // =====================================================
 
 const CLIENT_ID =
-"308840508820-b3qjh155tuj3jl53fqudm2adk0omm8s.apps.googleusercontent.com";
+"308840508820-b3qjh155tuj3jl53fqudm2aadk0omm8s.apps.googleusercontent.com";
 
 const SPREADSHEET_ID =
 "19CzQLHAihdyNl51W4nzcfzlYGs5V6n1PcOxCWwN-xRg";
@@ -120,13 +120,9 @@ const SHEETS_SCOPE =
 // =====================================================
 
 let accessToken = null;
-
 let tokenClient = null;
-
 let scanner = null;
-
 let scanning = false;
-
 let saving = false;
 
 
@@ -384,23 +380,16 @@ async function testSheetAccess() {
 
     const response =
       await fetch(
-
         url,
-
         {
-
           method: "GET",
 
           headers: {
-
             "Authorization":
               "Bearer " +
               accessToken
-
           }
-
         }
-
       );
 
 
@@ -543,9 +532,7 @@ async function testSheetAccess() {
 function startScanner() {
 
   if (scanner) {
-
     return;
-
   }
 
 
@@ -565,11 +552,8 @@ function startScanner() {
     fps: 10,
 
     qrbox: {
-
       width: 280,
-
       height: 280
-
     },
 
     aspectRatio: 1.0
@@ -579,7 +563,6 @@ function startScanner() {
 
   scanner
     .start(
-
       {
         facingMode:
           "environment"
@@ -646,14 +629,11 @@ async function onScanSuccess(
     !scanning ||
     saving
   ) {
-
     return;
-
   }
 
 
   saving = true;
-
   scanning = false;
 
 
@@ -661,16 +641,13 @@ async function onScanSuccess(
     "=========================="
   );
 
-
   debug(
     "QR SCANNED"
   );
 
-
   debug(
     "QR DATA:"
   );
-
 
   debug(
     decodedText
@@ -712,24 +689,6 @@ async function onScanSuccess(
     );
 
 
-    debug(
-      "Updated Rows: " +
-      (
-        result.updates?.updatedRows ||
-        0
-      )
-    );
-
-
-    debug(
-      "Updated Cells: " +
-      (
-        result.updates?.updatedCells ||
-        0
-      )
-    );
-
-
     showMessage(
       "✅ Entry Successfully Save हो गई<br>" +
       "Row No: " +
@@ -746,7 +705,6 @@ async function onScanSuccess(
       function () {
 
         saving = false;
-
         scanning = true;
 
 
@@ -754,7 +712,6 @@ async function onScanSuccess(
           "📷 अगला QR Code Scan करें...",
           "info"
         );
-
 
       },
       2000
@@ -765,9 +722,7 @@ async function onScanSuccess(
 
   catch (error) {
 
-    console.error(
-      error
-    );
+    console.error(error);
 
 
     debug(
@@ -791,7 +746,6 @@ async function onScanSuccess(
       function () {
 
         saving = false;
-
         scanning = true;
 
 
@@ -799,7 +753,6 @@ async function onScanSuccess(
           "📷 फिर से QR Code Scan करें...",
           "error"
         );
-
 
       },
       5000
@@ -926,8 +879,6 @@ function convertQRToRow(qrText) {
 // SAVE TO GOOGLE SHEETS
 // =====================================================
 //
-// IMPORTANT:
-//
 // A = Date
 // B = AWB
 // C = Name
@@ -939,12 +890,8 @@ function convertQRToRow(qrText) {
 // I = Live
 // J = Courier
 //
-// AWB और Courier को सुरक्षित रखने के लिए:
-//
-// 1. पहले existing A:J row पढ़ेंगे.
-// 2. A, C:I को update करेंगे.
-// 3. B (AWB) को केवल तभी update करेंगे जब नया AWB मिला हो.
-// 4. J (Courier) को कभी update नहीं करेंगे.
+// AWB खाली होने पर पुराना AWB सुरक्षित रहेगा.
+// Courier column J को भी सुरक्षित रखा जाएगा.
 //
 // =====================================================
 
@@ -959,24 +906,18 @@ async function saveToGoogleSheet(row) {
   }
 
 
-  debug(
-    "Preparing Sheets API save..."
-  );
-
-
-  debug(
-    "Saving to row: " +
-    nextRow
-  );
-
-
   const rowToSave =
     nextRow;
 
 
+  debug(
+    "Saving to row: " +
+    rowToSave
+  );
+
+
   // ===================================================
-  // STEP 1
-  // Existing A:J data पढ़ना
+  // पहले existing A:J row पढ़ें
   // ===================================================
 
   const readRange =
@@ -996,26 +937,17 @@ async function saveToGoogleSheet(row) {
     readRange;
 
 
-  debug(
-    "Reading existing row before save..."
-  );
-
-
   const readResponse =
     await fetch(
       readUrl,
       {
-
         method: "GET",
 
         headers: {
-
           "Authorization":
             "Bearer " +
             accessToken
-
         }
-
       }
     );
 
@@ -1037,7 +969,7 @@ async function saveToGoogleSheet(row) {
   catch (e) {
 
     throw new Error(
-      "Existing row पढ़ने में invalid response मिला"
+      "Existing row पढ़ने में error आया"
     );
 
   }
@@ -1069,8 +1001,7 @@ async function saveToGoogleSheet(row) {
 
 
   // ===================================================
-  // STEP 2
-  // Existing data को preserve करना
+  // EXISTING AWB
   // ===================================================
 
   const existingAWB =
@@ -1086,17 +1017,7 @@ async function saveToGoogleSheet(row) {
 
 
   // ===================================================
-  // STEP 3
-  // पूरा A:J row तैयार करना
-  //
-  // ध्यान दें:
-  //
-  // J = Courier
-  // Existing Courier हमेशा preserve होगा.
-  //
-  // B = AWB
-  // अगर नया AWB खाली है और पुराना AWB मौजूद है,
-  // तो पुराना AWB ही रखा जाएगा.
+  // FINAL ROW
   // ===================================================
 
   const finalRow = [
@@ -1108,6 +1029,8 @@ async function saveToGoogleSheet(row) {
 
 
     // B - AWB
+    // नया AWB है तो नया AWB
+    // नहीं है तो पुराना AWB
     newAWB !== ""
       ? row[1]
       : existingAWB,
@@ -1156,6 +1079,7 @@ async function saveToGoogleSheet(row) {
 
 
     // J - Courier
+    // पुराना Courier हमेशा preserve
     existingRow[9] !== undefined
       ? existingRow[9]
       : ""
@@ -1174,11 +1098,7 @@ async function saveToGoogleSheet(row) {
 
 
   // ===================================================
-  // STEP 4
-  // A:J update
-  //
-  // AWB खाली आने पर पुराना AWB preserve रहेगा.
-  // Courier पुराना value/formula preserve रहेगा.
+  // WRITE A:J
   // ===================================================
 
   const range =
@@ -1197,11 +1117,6 @@ async function saveToGoogleSheet(row) {
     "/values/" +
     range +
     "?valueInputOption=USER_ENTERED";
-
-
-  debug(
-    "Writing protected A:J row..."
-  );
 
 
   const response =
