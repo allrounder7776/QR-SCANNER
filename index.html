@@ -130,9 +130,14 @@ let nextRow = 2;
 // =====================================================
 
 function showMessage(text, type) {
-  const box = document.getElementById("message");
+
+  const box =
+    document.getElementById("message");
+
   box.innerHTML = text;
-  box.className = type || "info";
+
+  box.className =
+    type || "info";
 }
 
 
@@ -141,11 +146,14 @@ function showMessage(text, type) {
 // =====================================================
 
 function debug(text) {
+
   console.log(text);
 
-  const box = document.getElementById("debug");
+  const box =
+    document.getElementById("debug");
 
-  box.innerText += "\n" + text;
+  box.innerText +=
+    "\n" + text;
 }
 
 
@@ -153,61 +161,64 @@ function debug(text) {
 // PAGE LOAD
 // =====================================================
 
-window.addEventListener("load", function () {
+window.addEventListener(
+  "load",
+  function () {
 
-  debug("Page loaded");
-
-  debug(
-    "Google library: " +
-    (
-      typeof google !== "undefined"
-        ? "LOADED"
-        : "NOT LOADED"
-    )
-  );
-
-  if (
-    typeof google === "undefined" ||
-    !google.accounts ||
-    !google.accounts.oauth2
-  ) {
-
-    showMessage(
-      "❌ Google Login library load नहीं हुई",
-      "error"
-    );
+    debug("Page loaded");
 
     debug(
-      "ERROR: Google OAuth library missing"
+      "Google library: " +
+      (
+        typeof google !== "undefined"
+          ? "LOADED"
+          : "NOT LOADED"
+      )
     );
 
-    return;
+    if (
+      typeof google === "undefined" ||
+      !google.accounts ||
+      !google.accounts.oauth2
+    ) {
+
+      showMessage(
+        "❌ Google Login library load नहीं हुई",
+        "error"
+      );
+
+      debug(
+        "ERROR: Google OAuth library missing"
+      );
+
+      return;
+    }
+
+    tokenClient =
+      google.accounts.oauth2.initTokenClient({
+
+        client_id:
+          CLIENT_ID,
+
+        scope:
+          SHEETS_SCOPE,
+
+        callback:
+          handleTokenResponse
+
+      });
+
+    debug(
+      "OAuth client initialized"
+    );
+
+    showMessage(
+      "🔐 Google Account Connect करें",
+      "info"
+    );
+
   }
-
-  tokenClient =
-    google.accounts.oauth2.initTokenClient({
-
-      client_id:
-        CLIENT_ID,
-
-      scope:
-        SHEETS_SCOPE,
-
-      callback:
-        handleTokenResponse
-
-    });
-
-  debug(
-    "OAuth client initialized"
-  );
-
-  showMessage(
-    "🔐 Google Account Connect करें",
-    "info"
-  );
-
-});
+);
 
 
 // =====================================================
@@ -216,32 +227,37 @@ window.addEventListener("load", function () {
 
 document
   .getElementById("loginBtn")
-  .addEventListener("click", function () {
+  .addEventListener(
+    "click",
+    function () {
 
-    if (!tokenClient) {
+      if (!tokenClient) {
 
-      showMessage(
-        "❌ OAuth अभी तैयार नहीं है",
-        "error"
+        showMessage(
+          "❌ OAuth अभी तैयार नहीं है",
+          "error"
+        );
+
+        return;
+      }
+
+      debug(
+        "Requesting Google access token..."
       );
 
-      return;
+      showMessage(
+        "⏳ Google authorization...",
+        "info"
+      );
+
+      tokenClient.requestAccessToken({
+
+        prompt: ""
+
+      });
+
     }
-
-    debug(
-      "Requesting Google access token..."
-    );
-
-    showMessage(
-      "⏳ Google authorization...",
-      "info"
-    );
-
-    tokenClient.requestAccessToken({
-      prompt: ""
-    });
-
-  });
+  );
 
 
 // =====================================================
@@ -369,6 +385,7 @@ async function testSheetAccess() {
         JSON.parse(text);
 
     }
+
     catch (e) {
 
       throw new Error(
@@ -432,8 +449,6 @@ async function testSheetAccess() {
       "Sheet1: FOUND"
     );
 
-    // IMPORTANT:
-    // Existing data देखकर अगली खाली Row तय करें
     await findNextEmptyRow();
 
     showMessage(
@@ -467,7 +482,6 @@ async function testSheetAccess() {
 
 // =====================================================
 // FIND NEXT EMPTY ROW
-// हमेशा Row 2 से शुरू होगी
 // =====================================================
 
 async function findNextEmptyRow() {
@@ -512,6 +526,7 @@ async function findNextEmptyRow() {
       JSON.parse(text);
 
   }
+
   catch (e) {
 
     throw new Error(
@@ -683,7 +698,9 @@ async function onScanSuccess(
     !scanning ||
     saving
   ) {
+
     return;
+
   }
 
   saving = true;
@@ -806,8 +823,6 @@ function convertQRToRow(qrText) {
 
   let data = null;
 
-  // JSON check
-
   try {
 
     data =
@@ -912,22 +927,6 @@ function convertQRToRow(qrText) {
 // =====================================================
 // SAVE TO GOOGLE SHEETS
 // =====================================================
-//
-// A = Date
-// B = AWB
-// C = Name
-// D = Destination
-// E = Article No
-// F = Weight
-// G = Mobile
-// H = Order
-// I = Live
-// J = Courier
-//
-// AWB खाली होने पर पुराना AWB सुरक्षित रहेगा.
-// Courier column J भी सुरक्षित रहेगा.
-//
-// =====================================================
 
 async function saveToGoogleSheet(row) {
 
@@ -939,9 +938,6 @@ async function saveToGoogleSheet(row) {
 
   }
 
-
-  // हमेशा current nextRow इस्तेमाल होगा
-
   const rowToSave =
     nextRow;
 
@@ -952,7 +948,7 @@ async function saveToGoogleSheet(row) {
 
 
   // ===================================================
-  // पहले existing A:J row पढ़ें
+  // EXISTING ROW READ
   // ===================================================
 
   const readRange =
@@ -1021,14 +1017,9 @@ async function saveToGoogleSheet(row) {
       ? readResult.values[0]
       : [];
 
-  debug(
-    "Existing row: " +
-    JSON.stringify(existingRow)
-  );
-
 
   // ===================================================
-  // EXISTING AWB
+  // AWB
   // ===================================================
 
   const existingAWB =
@@ -1048,75 +1039,47 @@ async function saveToGoogleSheet(row) {
 
   const finalRow = [
 
-    // A - Date
     row[0] !== undefined
       ? row[0]
       : "",
 
-
-    // B - AWB
     newAWB !== ""
       ? row[1]
       : existingAWB,
 
-
-    // C - Name
     row[2] !== undefined
       ? row[2]
       : "",
 
-
-    // D - Destination
     row[3] !== undefined
       ? row[3]
       : "",
 
-
-    // E - Article No
     row[4] !== undefined
       ? row[4]
       : "",
 
-
-    // F - Weight
     row[5] !== undefined
       ? row[5]
       : "",
 
-
-    // G - Mobile
     row[6] !== undefined
       ? row[6]
       : "",
 
-
-    // H - Order
     row[7] !== undefined
       ? row[7]
       : "",
 
-
-    // I - Live
     row[8] !== undefined
       ? row[8]
       : "",
 
-
-    // J - Courier
     existingRow[9] !== undefined
       ? existingRow[9]
       : ""
 
   ];
-
-
-  debug(
-    "FINAL ROW:"
-  );
-
-  debug(
-    JSON.stringify(finalRow)
-  );
 
 
   // ===================================================
@@ -1173,19 +1136,6 @@ async function saveToGoogleSheet(row) {
 
   const text =
     await response.text();
-
-  debug(
-    "API HTTP STATUS: " +
-    response.status
-  );
-
-  debug(
-    "API RESPONSE:"
-  );
-
-  debug(
-    text.substring(0, 1500)
-  );
 
   let result;
 
@@ -1278,20 +1228,6 @@ async function saveToGoogleSheet(row) {
     "Next row will be: " +
     nextRow
   );
-
-  return {
-
-    updates: {
-
-      updatedRows:
-        updatedRows,
-
-      updatedCells:
-        updatedCells
-
-    }
-
-  };
 
 }
 
