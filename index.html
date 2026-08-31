@@ -39,6 +39,11 @@ button {
   cursor: pointer;
 }
 
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 #reader {
   width: 100%;
   max-width: 500px;
@@ -82,7 +87,7 @@ button {
 <div id="reader"></div>
 
 <div id="message" class="info">
-Google Account check हो रहा है...
+🔐 Google Account Connect करें
 </div>
 
 
@@ -148,6 +153,22 @@ function showMessage(text, type) {
 
 
 // =====================================================
+// LOGIN BUTTON
+// =====================================================
+
+document
+  .getElementById("loginBtn")
+  .addEventListener(
+    "click",
+    function () {
+
+      connectGoogle();
+
+    }
+  );
+
+
+// =====================================================
 // PAGE LOAD
 // =====================================================
 
@@ -155,10 +176,73 @@ window.addEventListener(
   "load",
   function () {
 
-    initializeGoogle();
+    // Google library को थोड़ा समय दें
+    waitForGoogle();
 
   }
 );
+
+
+// =====================================================
+// WAIT FOR GOOGLE LIBRARY
+// =====================================================
+
+function waitForGoogle() {
+
+  if (
+    typeof google !== "undefined" &&
+    google.accounts &&
+    google.accounts.oauth2
+  ) {
+
+    initializeGoogle();
+
+    return;
+
+  }
+
+
+  // 5 सेकंड तक Google library का इंतजार
+  let attempts = 0;
+
+  const timer =
+    setInterval(
+      function () {
+
+        attempts++;
+
+
+        if (
+          typeof google !== "undefined" &&
+          google.accounts &&
+          google.accounts.oauth2
+        ) {
+
+          clearInterval(timer);
+
+          initializeGoogle();
+
+          return;
+
+        }
+
+
+        if (attempts >= 50) {
+
+          clearInterval(timer);
+
+          showMessage(
+            "❌ Google Login load नहीं हुआ<br>Page refresh करें",
+            "error"
+          );
+
+        }
+
+      },
+      100
+    );
+
+}
 
 
 // =====================================================
@@ -167,61 +251,67 @@ window.addEventListener(
 
 function initializeGoogle() {
 
-  if (
-    typeof google === "undefined" ||
-    !google.accounts ||
-    !google.accounts.oauth2
-  ) {
+  try {
 
-    showMessage(
-      "❌ Google Login library load नहीं हुई",
-      "error"
-    );
+    tokenClient =
+      google.accounts.oauth2.initTokenClient({
 
-    return;
+        client_id:
+          CLIENT_ID,
 
-  }
+        scope:
+          SHEETS_SCOPE,
 
+        callback:
+          handleTokenResponse
 
-  tokenClient =
-    google.accounts.oauth2.initTokenClient({
-
-      client_id:
-        CLIENT_ID,
-
-      scope:
-        SHEETS_SCOPE,
-
-      callback:
-        handleTokenResponse
-
-    });
+      });
 
 
-  const remembered =
-    localStorage.getItem(
-      LOGIN_MEMORY_KEY
-    );
+    // अब page ready है
+    document
+      .getElementById("loginBtn")
+      .disabled = false;
 
-
-  if (
-    remembered === "YES"
-  ) {
-
-    showMessage(
-      "🔄 Google Account automatically connect हो रहा है...",
-      "info"
-    );
-
-    autoConnect();
-
-  }
-
-  else {
 
     showMessage(
       "🔐 Google Account Connect करें",
       "info"
+    );
+
+
+    // अगर पहले connection हुआ था,
+    // तो automatic silent connection की कोशिश करें
+    const remembered =
+      localStorage.getItem(
+        LOGIN_MEMORY_KEY
+      );
+
+
+    if (
+      remembered === "YES"
+    ) {
+
+      setTimeout(
+        function () {
+
+          silentConnect();
+
+        },
+        300
+      );
+
+    }
+
+  }
+
+  catch (error) {
+
+    console.error(error);
+
+    showMessage(
+      "❌ Google Login initialize नहीं हुआ",
+      "error"
     );
 
   }
@@ -230,12 +320,25 @@ function initializeGoogle() {
 
 
 // =====================================================
-// AUTO CONNECT
+// SILENT CONNECT
 // =====================================================
 
-function autoConnect() {
+function silentConnect() {
+
+  if (!tokenClient) {
+
+    return;
+
+  }
+
 
   try {
+
+    showMessage(
+      "🔄 Google Account connect हो रहा है...",
+      "info"
+    );
+
 
     tokenClient.requestAccessToken({
 
@@ -255,7 +358,57 @@ function autoConnect() {
 
 
 // =====================================================
-// SHOW LOGIN
+// NORMAL GOOGLE CONNECT
+// =====================================================
+
+function connectGoogle() {
+
+  if (!tokenClient) {
+
+    showMessage(
+      "⏳ Google Login अभी तैयार हो रहा है...",
+      "info"
+    );
+
+    waitForGoogle();
+
+    return;
+
+  }
+
+
+  showMessage(
+    "⏳ Google authorization...",
+    "info"
+  );
+
+
+  try {
+
+    tokenClient.requestAccessToken({
+
+      prompt: ""
+
+    });
+
+  }
+
+  catch (error) {
+
+    console.error(error);
+
+    showMessage(
+      "❌ Google authorization शुरू नहीं हो सका",
+      "error"
+    );
+
+  }
+
+}
+
+
+// =====================================================
+// SHOW LOGIN BUTTON
 // =====================================================
 
 function showLoginButton() {
@@ -275,50 +428,14 @@ function showLoginButton() {
 
 
 // =====================================================
-// LOGIN BUTTON
-// =====================================================
-
-document
-  .getElementById("loginBtn")
-  .addEventListener(
-    "click",
-    function () {
-
-      if (!tokenClient) {
-
-        showMessage(
-          "❌ Google Login अभी तैयार नहीं है",
-          "error"
-        );
-
-        return;
-
-      }
-
-
-      showMessage(
-        "⏳ Google authorization...",
-        "info"
-      );
-
-
-      tokenClient.requestAccessToken({
-
-        prompt: ""
-
-      });
-
-    }
-  );
-
-
-// =====================================================
 // TOKEN RESPONSE
 // =====================================================
 
 function handleTokenResponse(response) {
 
-  if (response.error) {
+  if (
+    response.error
+  ) {
 
     accessToken = null;
 
@@ -326,7 +443,12 @@ function handleTokenResponse(response) {
       LOGIN_MEMORY_KEY
     );
 
-    showLoginButton();
+
+    document
+      .getElementById("loginBtn")
+      .style.display =
+      "inline-block";
+
 
     showMessage(
       "❌ Google authorization failed<br>" +
@@ -342,7 +464,9 @@ function handleTokenResponse(response) {
   }
 
 
-  if (!response.access_token) {
+  if (
+    !response.access_token
+  ) {
 
     accessToken = null;
 
@@ -357,6 +481,10 @@ function handleTokenResponse(response) {
 
   }
 
+
+  // ===================================================
+  // TOKEN RECEIVED
+  // ===================================================
 
   accessToken =
     response.access_token;
@@ -390,6 +518,15 @@ function handleTokenResponse(response) {
 // =====================================================
 
 async function testSheetAccess() {
+
+  if (!accessToken) {
+
+    showLoginButton();
+
+    return;
+
+  }
+
 
   const url =
     "https://sheets.googleapis.com/v4/spreadsheets/" +
@@ -434,7 +571,7 @@ async function testSheetAccess() {
     catch (e) {
 
       throw new Error(
-        "Spreadsheet response JSON नहीं है"
+        "Google response सही नहीं मिला"
       );
 
     }
@@ -477,9 +614,12 @@ async function testSheetAccess() {
       i++
     ) {
 
+      const title =
+        sheets[i].properties?.title;
+
+
       if (
-        sheets[i].properties?.title ===
-        SHEET_NAME
+        title === SHEET_NAME
       ) {
 
         found = true;
@@ -500,7 +640,11 @@ async function testSheetAccess() {
     }
 
 
+    // =================================================
+    // IMPORTANT
     // Row 2 से पहली खाली Name Row
+    // =================================================
+
     await findNextEmptyRow();
 
 
@@ -516,6 +660,9 @@ async function testSheetAccess() {
 
 
   catch (error) {
+
+    console.error(error);
+
 
     showMessage(
       "❌ Sheet access failed<br>" +
@@ -536,18 +683,7 @@ async function testSheetAccess() {
 
 
 // =====================================================
-// CLEAN NAME VALUE
-// =====================================================
-//
-// यह function इन सभी को EMPTY मानेगा:
-//
-// ""
-// " "
-// "   "
-// non-breaking space
-// zero-width space
-// formula से आया blank
-//
+// CLEAN NAME
 // =====================================================
 
 function cleanNameValue(value) {
@@ -578,41 +714,29 @@ function cleanNameValue(value) {
 
 
 // =====================================================
-// FIND NEXT ENTRY ROW
+// FIND NEXT EMPTY ROW
 // =====================================================
 //
-// IMPORTANT:
+// ONLY COLUMN C = NAME
 //
-// केवल Column C = Name.
+// C2 → C3 → C4 → C5...
 //
-// हमेशा C2 से शुरू.
+// पहली खाली C cell = नई Entry
 //
-// पहली EMPTY C cell = Entry Row.
-//
-// J Courier का कोई relation नहीं.
+// Column J Courier को बिल्कुल नहीं देखा जाता.
 //
 // =====================================================
 
 async function findNextEmptyRow() {
 
-  // ===================================================
-  // HARD RESET
-  // ===================================================
-
+  // हमेशा reset
   nextRow = 2;
 
 
-  // ===================================================
-  // IMPORTANT:
-  // C2:C1000 पढ़ेंगे
-  //
-  // C2 खाली होने पर भी result में C2 की
-  // position maintain होगी.
-  // ===================================================
-
   const range =
     encodeURIComponent(
-      SHEET_NAME + "!C2:C1000"
+      SHEET_NAME +
+      "!C2:C1000"
     );
 
 
@@ -677,10 +801,6 @@ async function findNextEmptyRow() {
   }
 
 
-  // ===================================================
-  // COLUMN C VALUES
-  // ===================================================
-
   const columnValues =
     (
       result.values &&
@@ -691,14 +811,11 @@ async function findNextEmptyRow() {
 
 
   // ===================================================
-  // ALWAYS START FROM ROW 2
-  // ===================================================
-
-  nextRow = 2;
-
-
-  // ===================================================
-  // C2 → C1000
+  // IMPORTANT
+  //
+  // i = 0 => Row 2
+  // i = 1 => Row 3
+  // i = 2 => Row 4
   // ===================================================
 
   for (
@@ -719,10 +836,7 @@ async function findNextEmptyRow() {
       );
 
 
-    // =================================================
-    // FIRST EMPTY NAME
-    // =================================================
-
+    // पहली खाली Name cell
     if (
       name === ""
     ) {
@@ -737,10 +851,7 @@ async function findNextEmptyRow() {
   }
 
 
-  // ===================================================
-  // अगर C2:C1000 तक सब भरा है
-  // ===================================================
-
+  // C2:C1000 सभी भरी हुई हैं
   nextRow = 1001;
 
 }
@@ -861,17 +972,14 @@ async function onScanSuccess(
   try {
 
     // =================================================
-    // VERY IMPORTANT
-    //
-    // QR scan के ठीक बाद Column C फिर से पढ़ेंगे.
-    // इसलिए पुराना nextRow इस्तेमाल नहीं होगा.
+    // SCAN के तुरंत पहले C column दोबारा check
     // =================================================
 
     await findNextEmptyRow();
 
 
     // =================================================
-    // ROW NUMBER LOCK
+    // ROW LOCK
     // =================================================
 
     const rowToSave =
@@ -883,6 +991,10 @@ async function onScanSuccess(
         decodedText
       );
 
+
+    // =================================================
+    // SAVE
+    // =================================================
 
     await saveToGoogleSheet(
       row,
@@ -902,7 +1014,11 @@ async function onScanSuccess(
     beep();
 
 
-    // अगली scan पर फिर Column C check होगा
+    // =================================================
+    // अगली scan के लिए
+    // फिर से C column check होगा
+    // =================================================
+
     nextRow =
       rowToSave + 1;
 
@@ -1317,7 +1433,8 @@ async function saveToGoogleSheet(
   if (!responseAI.ok) {
 
     if (
-      responseAI.status === 401
+      responseAI.status === 401 ||
+      responseAI.status === 403
     ) {
 
       accessToken = null;
@@ -1434,7 +1551,8 @@ async function saveToGoogleSheet(
   if (!responseJ.ok) {
 
     if (
-      responseJ.status === 401
+      responseJ.status === 401 ||
+      responseJ.status === 403
     ) {
 
       accessToken = null;
