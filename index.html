@@ -103,6 +103,7 @@ button{
 
 /* =====================================================
    SCANNER
+   SIMPLE FIRST-STYLE LOOK
 ===================================================== */
 
 #reader-wrapper{
@@ -118,10 +119,7 @@ button{
 }
 
 
-/*
-   HTML5 QR CODE ke default corners/frames ko hide
-   kiya gaya hai.
-*/
+/* HTML5 QR default frame remove */
 
 #reader__scan_region{
   border:none !important;
@@ -148,7 +146,7 @@ button{
 }
 
 
-/* Dashboard */
+/* Scanner dashboard */
 
 #reader__dashboard{
   padding:10px !important;
@@ -167,7 +165,7 @@ button{
 
 
 /* =====================================================
-   PREMIUM 3-BORDER SCANNER LOOK
+   FIRST SIMPLE SCANNER FRAME
 ===================================================== */
 
 .scan-overlay{
@@ -181,161 +179,18 @@ button{
   justify-content:center;
 }
 
-
-/*
-   Outer border
-*/
-
 .scan-frame{
-  width:255px;
-  height:255px;
+  width:280px;
+  height:280px;
+
+  border:3px solid rgba(255,255,255,.90);
+  border-radius:16px;
+
+  box-shadow:
+    0 0 0 4px rgba(255,255,255,.12),
+    0 0 18px rgba(255,255,255,.25);
+
   position:relative;
-
-  border:2px solid rgba(255,255,255,.30);
-  border-radius:18px;
-
-  box-shadow:
-    0 0 0 6px rgba(255,255,255,.07),
-    0 0 0 10px rgba(255,255,255,.04);
-}
-
-
-/*
-   Middle border
-*/
-
-.scan-frame::before{
-  content:"";
-  position:absolute;
-
-  top:7px;
-  left:7px;
-  right:7px;
-  bottom:7px;
-
-  border:1px solid rgba(255,255,255,.45);
-  border-radius:14px;
-}
-
-
-/*
-   Inner border
-*/
-
-.scan-frame::after{
-  content:"";
-  position:absolute;
-
-  top:15px;
-  left:15px;
-  right:15px;
-  bottom:15px;
-
-  border:1px solid rgba(255,255,255,.18);
-  border-radius:10px;
-}
-
-
-/* =====================================================
-   CORNER DESIGN
-===================================================== */
-
-.corner{
-  position:absolute;
-  width:38px;
-  height:38px;
-
-  border-color:#fff;
-  border-style:solid;
-  border-width:0;
-
-  z-index:10;
-
-  filter:
-    drop-shadow(0 0 5px rgba(255,255,255,.7));
-}
-
-.corner.tl{
-  top:-2px;
-  left:-2px;
-
-  border-top-width:4px;
-  border-left-width:4px;
-
-  border-top-left-radius:10px;
-}
-
-.corner.tr{
-  top:-2px;
-  right:-2px;
-
-  border-top-width:4px;
-  border-right-width:4px;
-
-  border-top-right-radius:10px;
-}
-
-.corner.bl{
-  bottom:-2px;
-  left:-2px;
-
-  border-bottom-width:4px;
-  border-left-width:4px;
-
-  border-bottom-left-radius:10px;
-}
-
-.corner.br{
-  bottom:-2px;
-  right:-2px;
-
-  border-bottom-width:4px;
-  border-right-width:4px;
-
-  border-bottom-right-radius:10px;
-}
-
-
-/* =====================================================
-   SCAN LINE
-===================================================== */
-
-.scan-line{
-  position:absolute;
-
-  left:23px;
-  right:23px;
-
-  height:3px;
-
-  background:#fff;
-
-  box-shadow:
-    0 0 7px rgba(255,255,255,.9),
-    0 0 16px rgba(255,255,255,.55);
-
-  z-index:15;
-
-  animation:scanMove 2s linear infinite;
-}
-
-@keyframes scanMove{
-
-  0%{
-    top:22px;
-    opacity:.5;
-  }
-
-  50%{
-    top:calc(100% - 25px);
-    opacity:1;
-  }
-
-  100%{
-    top:22px;
-    opacity:.5;
-  }
-
 }
 
 
@@ -345,16 +200,11 @@ button{
 
 .message{
   text-align:center;
-
   padding:13px;
-
   border-radius:12px;
-
   margin-top:14px;
-
   font-size:14px;
   font-weight:700;
-
   display:none;
 }
 
@@ -379,9 +229,7 @@ button{
 .small{
   font-size:12px;
   color:#6b7280;
-
   text-align:center;
-
   margin-top:10px;
 }
 
@@ -433,6 +281,7 @@ button{
     <div id="nextRowBox">
 
       Next Entry Row:
+
       <b id="nextRow">
         Checking...
       </b>
@@ -449,23 +298,11 @@ button{
       <div id="reader"></div>
 
 
-      <!-- PREMIUM SCANNER FRAME -->
+      <!-- SIMPLE FIRST SCANNER FRAME -->
 
       <div class="scan-overlay">
 
-        <div class="scan-frame">
-
-          <div class="corner tl"></div>
-
-          <div class="corner tr"></div>
-
-          <div class="corner bl"></div>
-
-          <div class="corner br"></div>
-
-          <div class="scan-line"></div>
-
-        </div>
+        <div class="scan-frame"></div>
 
       </div>
 
@@ -479,9 +316,7 @@ button{
 
 
     <div class="small">
-
       QR code ko scan box ke andar rakhein
-
     </div>
 
   </div>
@@ -497,19 +332,24 @@ button{
 ===================================================== */
 
 const CLIENT_ID =
-"308840508820-b3qjh155tuj3jl53fqudm2aadk0omm8s.apps.googleusercontent.com";
+"308840508820-b3qjh155tuj3jl53fqudm2adk0omm8s.apps.googleusercontent.com";
+
 
 const SPREADSHEET_ID =
 "19CzQLHAihdyNl51W4nzcfzlYGs5V6n1PcOxCWwN-xRg";
 
+
 const SHEET_NAME =
 "Sheet1";
+
 
 const PIN_SHEET_NAME =
 "PIN CODE";
 
+
 const SCOPES =
 "https://www.googleapis.com/auth/spreadsheets";
+
 
 const LOGIN_MEMORY_KEY =
 "qr_scanner_google_connected";
@@ -795,6 +635,7 @@ function beep(){
       audioContext.currentTime + 0.15
     );
 
+
   }catch(e){
 
     console.log(
@@ -827,18 +668,13 @@ async function testSheetAccess(){
 
     const response =
       await fetch(
-
         url,
-
         {
-
           headers:{
             Authorization:
               "Bearer " + accessToken
           }
-
         }
-
       );
 
 
@@ -861,11 +697,9 @@ async function testSheetAccess(){
 
     const found =
       sheets.some(
-
         s =>
           s.properties &&
           s.properties.title === SHEET_NAME
-
       );
 
 
@@ -936,18 +770,13 @@ async function findNextEntryRow(){
 
   const response =
     await fetch(
-
       url,
-
       {
-
         headers:{
           Authorization:
             "Bearer " + accessToken
         }
-
       }
-
     );
 
 
@@ -981,7 +810,7 @@ async function findNextEntryRow(){
 
     const name =
       values[i] &&
-      values[i][0]
+      values[i][0] !== undefined
         ? String(
             values[i][0]
           ).trim()
@@ -1038,7 +867,6 @@ async function startScanner(){
       },
 
       {
-
         fps:10,
 
         qrbox:{
@@ -1047,7 +875,6 @@ async function startScanner(){
         },
 
         aspectRatio:1.0
-
       },
 
       onScanSuccess,
@@ -1168,20 +995,14 @@ async function onScanSuccess(
     */
 
     if(
-
       (
         !oldOriginalCourier ||
         oldOriginalCourier === "#N/A"
       )
-
       &&
-
       oldCourier
-
       &&
-
       oldCourier !== "#N/A"
-
     ){
 
       oldOriginalCourier =
@@ -1205,23 +1026,15 @@ async function onScanSuccess(
     */
 
     await saveEntry(
-
       actualRow,
-
       rowData,
-
       currentCourier,
-
       oldOriginalCourier
-
     );
 
 
     /*
-       =================================================
-       BEEP YAHAN HAI
-       SAVE SUCCESSFUL HONE KE BAAD
-       =================================================
+       SAVE SUCCESSFUL HONE KE BAAD BEEP
     */
 
     beep();
@@ -1252,15 +1065,12 @@ async function onScanSuccess(
     */
 
     setTimeout(
-
       () => {
 
         saving = false;
 
       },
-
       700
-
     );
 
 
@@ -1481,18 +1291,13 @@ async function readCourierData(
 
   const response =
     await fetch(
-
       url,
-
       {
-
         headers:{
           Authorization:
             "Bearer " + accessToken
         }
-
       }
-
     );
 
 
@@ -1510,10 +1315,8 @@ async function readCourierData(
 
 
   return (
-
     data.values &&
     data.values[0]
-
   ) || ["",""];
 
 }
@@ -1546,18 +1349,13 @@ async function findCourierByPin(
 
   const response =
     await fetch(
-
       url,
-
       {
-
         headers:{
           Authorization:
             "Bearer " + accessToken
         }
-
       }
-
     );
 
 
@@ -1627,15 +1425,10 @@ async function findCourierByPin(
 ===================================================== */
 
 async function saveEntry(
-
   rowNumber,
-
   rowData,
-
   currentCourier,
-
   oldCourier
-
 ){
 
   /*
@@ -1654,18 +1447,13 @@ async function saveEntry(
 
   const existingResponse =
     await fetch(
-
       existingUrl,
-
       {
-
         headers:{
           Authorization:
             "Bearer " + accessToken
         }
-
       }
-
     );
 
 
@@ -1684,10 +1472,8 @@ async function saveEntry(
 
   const existingRow =
     (
-
       existingData.values &&
       existingData.values[0]
-
     ) || [];
 
 
@@ -1696,18 +1482,14 @@ async function saveEntry(
   */
 
   if(
-
     (
       !rowData[1] ||
       String(
         rowData[1]
       ).trim() === ""
     )
-
     &&
-
     existingRow[1]
-
   ){
 
     rowData[1] =
@@ -1717,9 +1499,7 @@ async function saveEntry(
 
 
   /*
-     ================================================
      A:I SAVE
-     ================================================
   */
 
   const dataRange =
@@ -1734,11 +1514,8 @@ async function saveEntry(
 
   const dataResponse =
     await fetch(
-
       dataUrl,
-
       {
-
         method:"PUT",
 
         headers:{
@@ -1766,7 +1543,6 @@ async function saveEntry(
         })
 
       }
-
     );
 
 
@@ -1785,9 +1561,7 @@ async function saveEntry(
 
 
   /*
-     ================================================
      J:K SAVE
-     ================================================
   */
 
   const courier =
@@ -1810,11 +1584,8 @@ async function saveEntry(
 
   const courierResponse =
     await fetch(
-
       courierUrl,
-
       {
-
         method:"PUT",
 
         headers:{
@@ -1846,7 +1617,6 @@ async function saveEntry(
         })
 
       }
-
     );
 
 
@@ -1863,15 +1633,6 @@ async function saveEntry(
 
   }
 
-
-  /*
-     IMPORTANT:
-     Is function ke yahan tak complete hone ka
-     matlab A:I aur J:K dono successful hain.
-
-     Iske BAAD onScanSuccess() me beep() chalega.
-  */
-
 }
 
 
@@ -1880,11 +1641,8 @@ async function saveEntry(
 ===================================================== */
 
 function showMessage(
-
   text,
-
   type
-
 ){
 
   const box =
@@ -1908,19 +1666,15 @@ function showMessage(
 ===================================================== */
 
 document.addEventListener(
-
   "dblclick",
-
   function(e){
 
     e.preventDefault();
 
   },
-
   {
     passive:false
   }
-
 );
 
 </script>
