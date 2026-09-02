@@ -12,15 +12,16 @@
 <script src="https://accounts.google.com/gsi/client"></script>
 
 <style>
+
 *{
   box-sizing:border-box;
 }
 
 body{
   margin:0;
-  font-family:Arial, sans-serif;
-  background:#f5f7fb;
-  color:#1f2937;
+  font-family:Arial,Helvetica,sans-serif;
+  background:#f4f6f8;
+  color:#111827;
 }
 
 .container{
@@ -31,7 +32,7 @@ body{
 
 .header{
   background:#111827;
-  color:white;
+  color:#fff;
   padding:18px;
   border-radius:18px;
   margin-bottom:16px;
@@ -40,7 +41,7 @@ body{
 
 .header h1{
   margin:0 0 6px;
-  font-size:22px;
+  font-size:23px;
 }
 
 .header p{
@@ -50,11 +51,11 @@ body{
 }
 
 .card{
-  background:white;
+  background:#fff;
   border-radius:18px;
   padding:16px;
   margin-bottom:15px;
-  box-shadow:0 5px 20px rgba(0,0,0,.07);
+  box-shadow:0 6px 22px rgba(0,0,0,.07);
 }
 
 .status-row{
@@ -66,19 +67,19 @@ body{
 
 .status{
   font-size:14px;
-  font-weight:600;
+  font-weight:700;
 }
 
-.status.connected{
+.connected{
   color:#15803d;
 }
 
-.status.disconnected{
+.disconnected{
   color:#dc2626;
 }
 
 button{
-  border:none;
+  border:0;
   border-radius:12px;
   padding:11px 16px;
   font-size:14px;
@@ -88,16 +89,21 @@ button{
 
 #connectBtn{
   background:#111827;
-  color:white;
+  color:#fff;
 }
 
 #nextRowBox{
   background:#f3f4f6;
   border-radius:12px;
   padding:12px;
-  margin-top:12px;
+  margin-top:13px;
   font-size:14px;
 }
+
+
+/* =====================================================
+   SCANNER
+===================================================== */
 
 #reader-wrapper{
   position:relative;
@@ -110,6 +116,12 @@ button{
 #reader{
   width:100%;
 }
+
+
+/*
+   HTML5 QR CODE ke default corners/frames ko hide
+   kiya gaya hai.
+*/
 
 #reader__scan_region{
   border:none !important;
@@ -135,110 +147,214 @@ button{
   box-shadow:none !important;
 }
 
+
+/* Dashboard */
+
 #reader__dashboard{
   padding:10px !important;
   background:#111827 !important;
 }
 
 #reader__dashboard_section{
-  color:white !important;
+  color:#fff !important;
 }
 
 #reader__dashboard_section_csr button{
-  background:white !important;
+  background:#fff !important;
   color:#111827 !important;
   border-radius:10px !important;
 }
+
+
+/* =====================================================
+   PREMIUM 3-BORDER SCANNER LOOK
+===================================================== */
 
 .scan-overlay{
   pointer-events:none;
   position:absolute;
   inset:0;
-  z-index:20;
+  z-index:50;
+
   display:flex;
   align-items:center;
   justify-content:center;
 }
 
+
+/*
+   Outer border
+*/
+
 .scan-frame{
-  width:245px;
-  height:245px;
+  width:255px;
+  height:255px;
   position:relative;
-  border:none !important;
-  outline:none !important;
-  box-shadow:none !important;
+
+  border:2px solid rgba(255,255,255,.30);
+  border-radius:18px;
+
+  box-shadow:
+    0 0 0 6px rgba(255,255,255,.07),
+    0 0 0 10px rgba(255,255,255,.04);
 }
+
+
+/*
+   Middle border
+*/
+
+.scan-frame::before{
+  content:"";
+  position:absolute;
+
+  top:7px;
+  left:7px;
+  right:7px;
+  bottom:7px;
+
+  border:1px solid rgba(255,255,255,.45);
+  border-radius:14px;
+}
+
+
+/*
+   Inner border
+*/
+
+.scan-frame::after{
+  content:"";
+  position:absolute;
+
+  top:15px;
+  left:15px;
+  right:15px;
+  bottom:15px;
+
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:10px;
+}
+
+
+/* =====================================================
+   CORNER DESIGN
+===================================================== */
 
 .corner{
   position:absolute;
-  width:35px;
-  height:35px;
-  border-color:#ffffff !important;
+  width:38px;
+  height:38px;
+
+  border-color:#fff;
   border-style:solid;
   border-width:0;
+
+  z-index:10;
+
+  filter:
+    drop-shadow(0 0 5px rgba(255,255,255,.7));
 }
 
 .corner.tl{
-  top:0;
-  left:0;
+  top:-2px;
+  left:-2px;
+
   border-top-width:4px;
   border-left-width:4px;
-  border-top-left-radius:7px;
+
+  border-top-left-radius:10px;
 }
 
 .corner.tr{
-  top:0;
-  right:0;
+  top:-2px;
+  right:-2px;
+
   border-top-width:4px;
   border-right-width:4px;
-  border-top-right-radius:7px;
+
+  border-top-right-radius:10px;
 }
 
 .corner.bl{
-  bottom:0;
-  left:0;
+  bottom:-2px;
+  left:-2px;
+
   border-bottom-width:4px;
   border-left-width:4px;
-  border-bottom-left-radius:7px;
+
+  border-bottom-left-radius:10px;
 }
 
 .corner.br{
-  bottom:0;
-  right:0;
+  bottom:-2px;
+  right:-2px;
+
   border-bottom-width:4px;
   border-right-width:4px;
-  border-bottom-right-radius:7px;
+
+  border-bottom-right-radius:10px;
 }
+
+
+/* =====================================================
+   SCAN LINE
+===================================================== */
 
 .scan-line{
   position:absolute;
-  left:5px;
-  right:5px;
+
+  left:23px;
+  right:23px;
+
   height:3px;
-  background:#ffffff;
-  box-shadow:0 0 10px rgba(255,255,255,.9);
+
+  background:#fff;
+
+  box-shadow:
+    0 0 7px rgba(255,255,255,.9),
+    0 0 16px rgba(255,255,255,.55);
+
+  z-index:15;
+
   animation:scanMove 2s linear infinite;
 }
 
 @keyframes scanMove{
+
   0%{
-    top:5px;
+    top:22px;
+    opacity:.5;
   }
+
   50%{
-    top:calc(100% - 8px);
+    top:calc(100% - 25px);
+    opacity:1;
   }
+
   100%{
-    top:5px;
+    top:22px;
+    opacity:.5;
   }
+
 }
+
+
+/* =====================================================
+   MESSAGE
+===================================================== */
 
 .message{
   text-align:center;
+
   padding:13px;
+
   border-radius:12px;
+
   margin-top:14px;
+
   font-size:14px;
-  font-weight:600;
+  font-weight:700;
+
   display:none;
 }
 
@@ -263,40 +379,68 @@ button{
 .small{
   font-size:12px;
   color:#6b7280;
+
   text-align:center;
+
   margin-top:10px;
 }
+
 </style>
 </head>
+
 
 <body>
 
 <div class="container">
 
   <div class="header">
+
     <h1>QR Scanner</h1>
-    <p>QR Scan → Google Sheets</p>
+
+    <p>
+      QR Scan → Google Sheets
+    </p>
+
   </div>
+
 
   <div class="card">
 
     <div class="status-row">
+
       <div>
-        <div id="statusText" class="status disconnected">
+
+        <div
+          id="statusText"
+          class="status disconnected"
+        >
           Google Not Connected
         </div>
+
       </div>
 
-      <button id="connectBtn" onclick="connectGoogle()">
+
+      <button
+        id="connectBtn"
+        onclick="connectGoogle()"
+      >
         Connect Google
       </button>
+
     </div>
 
+
     <div id="nextRowBox">
-      Next Entry Row: <b id="nextRow">Checking...</b>
+
+      Next Entry Row:
+      <b id="nextRow">
+        Checking...
+      </b>
+
     </div>
 
   </div>
+
 
   <div class="card">
 
@@ -304,25 +448,40 @@ button{
 
       <div id="reader"></div>
 
+
+      <!-- PREMIUM SCANNER FRAME -->
+
       <div class="scan-overlay">
+
         <div class="scan-frame">
 
           <div class="corner tl"></div>
+
           <div class="corner tr"></div>
+
           <div class="corner bl"></div>
+
           <div class="corner br"></div>
 
           <div class="scan-line"></div>
 
         </div>
+
       </div>
 
     </div>
 
-    <div id="message" class="message"></div>
+
+    <div
+      id="message"
+      class="message"
+    ></div>
+
 
     <div class="small">
+
       QR code ko scan box ke andar rakhein
+
     </div>
 
   </div>
@@ -332,9 +491,10 @@ button{
 
 <script>
 
-/* =========================================================
+
+/* =====================================================
    GOOGLE SETTINGS
-========================================================= */
+===================================================== */
 
 const CLIENT_ID =
 "308840508820-b3qjh155tuj3jl53fqudm2aadk0omm8s.apps.googleusercontent.com";
@@ -342,8 +502,11 @@ const CLIENT_ID =
 const SPREADSHEET_ID =
 "19CzQLHAihdyNl51W4nzcfzlYGs5V6n1PcOxCWwN-xRg";
 
-const SHEET_NAME = "Sheet1";
-const PIN_SHEET_NAME = "PIN CODE";
+const SHEET_NAME =
+"Sheet1";
+
+const PIN_SHEET_NAME =
+"PIN CODE";
 
 const SCOPES =
 "https://www.googleapis.com/auth/spreadsheets";
@@ -352,12 +515,14 @@ const LOGIN_MEMORY_KEY =
 "qr_scanner_google_connected";
 
 
-/* =========================================================
+/* =====================================================
    GLOBAL VARIABLES
-========================================================= */
+===================================================== */
 
 let accessToken = null;
+
 let tokenClient = null;
+
 let scanner = null;
 
 let nextRow = 2;
@@ -367,9 +532,9 @@ let saving = false;
 let audioContext = null;
 
 
-/* =========================================================
+/* =====================================================
    PAGE LOAD
-========================================================= */
+===================================================== */
 
 window.onload = function(){
 
@@ -378,9 +543,9 @@ window.onload = function(){
 };
 
 
-/* =========================================================
-   GOOGLE LOGIN INITIALIZE
-========================================================= */
+/* =====================================================
+   GOOGLE INITIALIZE
+===================================================== */
 
 function initializeGoogle(){
 
@@ -399,28 +564,33 @@ function initializeGoogle(){
   }
 
 
-  tokenClient = google.accounts.oauth2.initTokenClient({
+  tokenClient =
+    google.accounts.oauth2.initTokenClient({
 
-    client_id: CLIENT_ID,
+      client_id:CLIENT_ID,
 
-    scope: SCOPES,
+      scope:SCOPES,
 
-    callback: handleTokenResponse
+      callback:handleTokenResponse
 
-  });
+    });
 
 
   /*
-     Agar pehle Google connect ho chuka hai
-     to dobara popup nahi dikhayega.
+     Agar pehle connected tha
+     to dobara consent popup nahi.
   */
 
   if(
-    localStorage.getItem(LOGIN_MEMORY_KEY) === "1"
+    localStorage.getItem(
+      LOGIN_MEMORY_KEY
+    ) === "1"
   ){
 
     tokenClient.requestAccessToken({
+
       prompt:""
+
     });
 
   }
@@ -428,9 +598,9 @@ function initializeGoogle(){
 }
 
 
-/* =========================================================
+/* =====================================================
    CONNECT GOOGLE
-========================================================= */
+===================================================== */
 
 function connectGoogle(){
 
@@ -444,16 +614,19 @@ function connectGoogle(){
     return;
   }
 
+
   tokenClient.requestAccessToken({
+
     prompt:"consent"
+
   });
 
 }
 
 
-/* =========================================================
+/* =====================================================
    TOKEN RESPONSE
-========================================================= */
+===================================================== */
 
 function handleTokenResponse(response){
 
@@ -468,7 +641,8 @@ function handleTokenResponse(response){
   }
 
 
-  accessToken = response.access_token;
+  accessToken =
+    response.access_token;
 
 
   localStorage.setItem(
@@ -477,36 +651,35 @@ function handleTokenResponse(response){
   );
 
 
-  document.getElementById("statusText").textContent =
+  document.getElementById(
+    "statusText"
+  ).textContent =
     "Google Connected";
 
-  document.getElementById("statusText").className =
+
+  document.getElementById(
+    "statusText"
+  ).className =
     "status connected";
 
 
-  document.getElementById("connectBtn").textContent =
+  document.getElementById(
+    "connectBtn"
+  ).textContent =
     "Connected";
 
 
-  /*
-     Audio context user interaction ke baad prepare
-  */
-
   prepareAudio();
 
-
-  /*
-     Pehle Sheet access test
-  */
 
   testSheetAccess();
 
 }
 
 
-/* =========================================================
+/* =====================================================
    AUDIO PREPARE
-========================================================= */
+===================================================== */
 
 function prepareAudio(){
 
@@ -522,7 +695,10 @@ function prepareAudio(){
 
     }
 
-    if(audioContext.state === "suspended"){
+
+    if(
+      audioContext.state === "suspended"
+    ){
 
       audioContext.resume();
 
@@ -530,18 +706,19 @@ function prepareAudio(){
 
   }catch(e){
 
-    console.log("Audio prepare error:",e);
+    console.log(
+      "Audio prepare error:",
+      e
+    );
 
   }
 
 }
 
 
-/* =========================================================
+/* =====================================================
    BEEP
-   IMPORTANT:
-   Ye function sirf successful save ke BAAD call hoga.
-========================================================= */
+===================================================== */
 
 function beep(){
 
@@ -557,7 +734,10 @@ function beep(){
 
     }
 
-    if(audioContext.state === "suspended"){
+
+    if(
+      audioContext.state === "suspended"
+    ){
 
       audioContext.resume();
 
@@ -567,13 +747,17 @@ function beep(){
     const oscillator =
       audioContext.createOscillator();
 
+
     const gainNode =
       audioContext.createGain();
 
 
-    oscillator.frequency.value = 900;
+    oscillator.type =
+      "sine";
 
-    oscillator.type = "sine";
+
+    oscillator.frequency.value =
+      900;
 
 
     gainNode.gain.setValueAtTime(
@@ -581,10 +765,12 @@ function beep(){
       audioContext.currentTime
     );
 
+
     gainNode.gain.exponentialRampToValueAtTime(
       0.18,
       audioContext.currentTime + 0.01
     );
+
 
     gainNode.gain.exponentialRampToValueAtTime(
       0.0001,
@@ -592,7 +778,10 @@ function beep(){
     );
 
 
-    oscillator.connect(gainNode);
+    oscillator.connect(
+      gainNode
+    );
+
 
     gainNode.connect(
       audioContext.destination
@@ -601,22 +790,26 @@ function beep(){
 
     oscillator.start();
 
+
     oscillator.stop(
       audioContext.currentTime + 0.15
     );
 
   }catch(e){
 
-    console.log("Beep error:",e);
+    console.log(
+      "Beep error:",
+      e
+    );
 
   }
 
 }
 
 
-/* =========================================================
-   SHEET ACCESS TEST
-========================================================= */
+/* =====================================================
+   TEST SHEET ACCESS
+===================================================== */
 
 async function testSheetAccess(){
 
@@ -633,14 +826,20 @@ async function testSheetAccess(){
 
 
     const response =
-      await fetch(url,{
+      await fetch(
 
-        headers:{
-          Authorization:
-            "Bearer " + accessToken
+        url,
+
+        {
+
+          headers:{
+            Authorization:
+              "Bearer " + accessToken
+          }
+
         }
 
-      });
+      );
 
 
     if(!response.ok){
@@ -662,9 +861,11 @@ async function testSheetAccess(){
 
     const found =
       sheets.some(
+
         s =>
           s.properties &&
           s.properties.title === SHEET_NAME
+
       );
 
 
@@ -679,14 +880,16 @@ async function testSheetAccess(){
 
     /*
        IMPORTANT:
-       Next row sirf Column C ke basis par
+       Next row sirf Column C se.
     */
 
     nextRow =
       await findNextEntryRow();
 
 
-    document.getElementById("nextRow").textContent =
+    document.getElementById(
+      "nextRow"
+    ).textContent =
       nextRow;
 
 
@@ -703,6 +906,7 @@ async function testSheetAccess(){
 
     console.error(error);
 
+
     showMessage(
       error.message,
       "error"
@@ -713,10 +917,10 @@ async function testSheetAccess(){
 }
 
 
-/* =========================================================
+/* =====================================================
    FIND NEXT ENTRY ROW
-   ONLY COLUMN C
-========================================================= */
+   COLUMN C = NAME
+===================================================== */
 
 async function findNextEntryRow(){
 
@@ -731,14 +935,20 @@ async function findNextEntryRow(){
 
 
   const response =
-    await fetch(url,{
+    await fetch(
 
-      headers:{
-        Authorization:
-          "Bearer " + accessToken
+      url,
+
+      {
+
+        headers:{
+          Authorization:
+            "Bearer " + accessToken
+        }
+
       }
 
-    });
+    );
 
 
   if(!response.ok){
@@ -759,16 +969,22 @@ async function findNextEntryRow(){
 
 
   /*
-     C2 se start.
-     Pehla blank = wahi next entry row.
+     C2 se check.
+     Pehla blank = next row.
   */
 
-  for(let i = 0; i < values.length; i++){
+  for(
+    let i = 0;
+    i < values.length;
+    i++
+  ){
 
     const name =
       values[i] &&
       values[i][0]
-        ? String(values[i][0]).trim()
+        ? String(
+            values[i][0]
+          ).trim()
         : "";
 
 
@@ -781,18 +997,14 @@ async function findNextEntryRow(){
   }
 
 
-  /*
-     Agar koi blank nahi mila
-  */
-
   return values.length + 2;
 
 }
 
 
-/* =========================================================
+/* =====================================================
    START SCANNER
-========================================================= */
+===================================================== */
 
 async function startScanner(){
 
@@ -804,13 +1016,16 @@ async function startScanner(){
 
     }catch(e){}
 
+
     scanner = null;
 
   }
 
 
   scanner =
-    new Html5Qrcode("reader");
+    new Html5Qrcode(
+      "reader"
+    );
 
 
   try{
@@ -818,10 +1033,12 @@ async function startScanner(){
     await scanner.start(
 
       {
-        facingMode:"environment"
+        facingMode:
+          "environment"
       },
 
       {
+
         fps:10,
 
         qrbox:{
@@ -839,9 +1056,11 @@ async function startScanner(){
 
     );
 
+
   }catch(error){
 
     console.error(error);
+
 
     showMessage(
       "Camera start nahi ho pa rahi: " +
@@ -854,15 +1073,16 @@ async function startScanner(){
 }
 
 
-/* =========================================================
-   QR SCAN SUCCESS
-========================================================= */
+/* =====================================================
+   QR SUCCESS
+===================================================== */
 
-async function onScanSuccess(decodedText){
+async function onScanSuccess(
+  decodedText
+){
 
   /*
-     Agar ek QR ko scanner multiple baar detect kare
-     to duplicate save prevent karega.
+     Duplicate scan prevent.
   */
 
   if(saving){
@@ -885,68 +1105,83 @@ async function onScanSuccess(decodedText){
 
     /*
        IMPORTANT:
-       Save se PEHLE beep nahi hoga.
-
-       Har scan par Column C dobara check hoga.
-       Isse galat row 462/531 type issue avoid hoga.
+       Har scan ke time Column C dobara check.
     */
 
     const actualRow =
       await findNextEntryRow();
 
 
-    nextRow = actualRow;
+    nextRow =
+      actualRow;
 
 
-    document.getElementById("nextRow").textContent =
+    document.getElementById(
+      "nextRow"
+    ).textContent =
       actualRow;
 
 
     /*
-       QR ko A:I data me convert
+       QR → A:I
     */
 
     const rowData =
-      convertQRToRow(decodedText);
+      convertQRToRow(
+        decodedText
+      );
 
 
     /*
-       PINCODE = Column D
+       D = PINCODE
     */
 
     const pinCode =
       rowData[3]
-        ? String(rowData[3]).trim()
+        ? String(
+            rowData[3]
+          ).trim()
         : "";
 
 
     /*
-       Existing J:K read
+       J:K existing data
     */
 
     const oldData =
-      await readCourierData(actualRow);
+      await readCourierData(
+        actualRow
+      );
 
 
     let oldCourier =
       oldData[0] || "";
+
 
     let oldOriginalCourier =
       oldData[1] || "";
 
 
     /*
-       Agar K me courier pehle se hai
-       to preserve karega.
+       Existing J ko K me preserve
+       agar K blank/#N/A hai.
     */
 
     if(
+
       (
         !oldOriginalCourier ||
         oldOriginalCourier === "#N/A"
-      ) &&
-      oldCourier &&
+      )
+
+      &&
+
+      oldCourier
+
+      &&
+
       oldCourier !== "#N/A"
+
     ){
 
       oldOriginalCourier =
@@ -956,30 +1191,17 @@ async function onScanSuccess(decodedText){
 
 
     /*
-       PIN CODE sheet se Courier
+       PIN CODE → COURIER
     */
 
     const currentCourier =
-      await findCourierByPin(pinCode);
+      await findCourierByPin(
+        pinCode
+      );
 
 
     /*
-       Agar PIN nahi mila to #N/A
-    */
-
-    if(
-      !currentCourier
-    ){
-
-      /*
-         currentCourier ko #N/A rakhenge
-      */
-
-    }
-
-
-    /*
-       A:I + J:K save
+       COMPLETE SAVE
     */
 
     await saveEntry(
@@ -996,24 +1218,26 @@ async function onScanSuccess(decodedText){
 
 
     /*
-       ==================================================
-       VERY IMPORTANT
-       GOOGLE SHEET SAVE SUCCESSFUL HONE KE BAAD BEEP
-       ==================================================
+       =================================================
+       BEEP YAHAN HAI
+       SAVE SUCCESSFUL HONE KE BAAD
+       =================================================
     */
 
     beep();
 
 
     /*
-       Next row update
+       Next row
     */
 
     nextRow =
       actualRow + 1;
 
 
-    document.getElementById("nextRow").textContent =
+    document.getElementById(
+      "nextRow"
+    ).textContent =
       nextRow;
 
 
@@ -1024,15 +1248,20 @@ async function onScanSuccess(decodedText){
 
 
     /*
-       Thoda delay
-       taki same QR duplicate na ho.
+       Same QR ki duplicate entry avoid.
     */
 
-    setTimeout(()=>{
+    setTimeout(
 
-      saving = false;
+      () => {
 
-    },700);
+        saving = false;
+
+      },
+
+      700
+
+    );
 
 
   }catch(error){
@@ -1040,15 +1269,16 @@ async function onScanSuccess(decodedText){
     console.error(error);
 
 
+    /*
+       Error hone par beep NAHI.
+    */
+
     showMessage(
-      "Save failed: " + error.message,
+      "Save failed: " +
+      error.message,
       "error"
     );
 
-
-    /*
-       ERROR hone par beep nahi hoga.
-    */
 
     saving = false;
 
@@ -1057,37 +1287,41 @@ async function onScanSuccess(decodedText){
 }
 
 
-/* =========================================================
-   QR FAILURE
-========================================================= */
+/* =====================================================
+   SCAN FAILURE
+===================================================== */
 
 function onScanFailure(error){
 
   /*
-     Intentionally blank.
-     Continuous scan errors show nahi karne.
+     Kuch nahi karna.
+     Continuous scanner errors hide.
   */
 
 }
 
 
-/* =========================================================
-   CONVERT QR DATA TO A:I
-========================================================= */
+/* =====================================================
+   QR → A:I
+===================================================== */
 
-function convertQRToRow(qrText){
+function convertQRToRow(
+  qrText
+){
 
   let obj = null;
 
 
   /*
-     JSON QR
+     JSON try
   */
 
   try{
 
     obj =
-      JSON.parse(qrText);
+      JSON.parse(
+        qrText
+      );
 
   }catch(e){
 
@@ -1097,14 +1331,16 @@ function convertQRToRow(qrText){
 
 
   /*
-     Non JSON QR
+     Normal text QR
   */
 
   if(!obj){
 
     return [
 
-      new Date().toLocaleDateString("en-GB"),
+      new Date().toLocaleDateString(
+        "en-GB"
+      ),
 
       qrText,
 
@@ -1128,7 +1364,9 @@ function convertQRToRow(qrText){
 
 
   const today =
-    new Date().toLocaleDateString("en-GB");
+    new Date().toLocaleDateString(
+      "en-GB"
+    );
 
 
   const date =
@@ -1201,13 +1439,21 @@ function convertQRToRow(qrText){
   return [
 
     date,
+
     awb,
+
     name,
+
     destination,
+
     articleNo,
+
     weight,
+
     mobile,
+
     order,
+
     live
 
   ];
@@ -1215,11 +1461,13 @@ function convertQRToRow(qrText){
 }
 
 
-/* =========================================================
+/* =====================================================
    READ J:K
-========================================================= */
+===================================================== */
 
-async function readCourierData(rowNumber){
+async function readCourierData(
+  rowNumber
+){
 
   const range =
     encodeURIComponent(
@@ -1232,14 +1480,20 @@ async function readCourierData(rowNumber){
 
 
   const response =
-    await fetch(url,{
+    await fetch(
 
-      headers:{
-        Authorization:
-          "Bearer " + accessToken
+      url,
+
+      {
+
+        headers:{
+          Authorization:
+            "Bearer " + accessToken
+        }
+
       }
 
-    });
+    );
 
 
   if(!response.ok){
@@ -1256,18 +1510,22 @@ async function readCourierData(rowNumber){
 
 
   return (
+
     data.values &&
     data.values[0]
+
   ) || ["",""];
 
 }
 
 
-/* =========================================================
-   FIND COURIER FROM PIN CODE SHEET
-========================================================= */
+/* =====================================================
+   PIN → COURIER
+===================================================== */
 
-async function findCourierByPin(pinCode){
+async function findCourierByPin(
+  pinCode
+){
 
   if(!pinCode){
 
@@ -1287,14 +1545,20 @@ async function findCourierByPin(pinCode){
 
 
   const response =
-    await fetch(url,{
+    await fetch(
 
-      headers:{
-        Authorization:
-          "Bearer " + accessToken
+      url,
+
+      {
+
+        headers:{
+          Authorization:
+            "Bearer " + accessToken
+        }
+
       }
 
-    });
+    );
 
 
   if(!response.ok){
@@ -1315,14 +1579,22 @@ async function findCourierByPin(pinCode){
 
 
   const searchPin =
-    String(pinCode).trim();
+    String(
+      pinCode
+    ).trim();
 
 
-  for(let i = 0; i < values.length; i++){
+  for(
+    let i = 0;
+    i < values.length;
+    i++
+  ){
 
     const sheetPin =
       values[i][0]
-        ? String(values[i][0]).trim()
+        ? String(
+            values[i][0]
+          ).trim()
         : "";
 
 
@@ -1332,7 +1604,9 @@ async function findCourierByPin(pinCode){
 
       const courier =
         values[i][1]
-          ? String(values[i][1]).trim()
+          ? String(
+              values[i][1]
+            ).trim()
           : "";
 
 
@@ -1348,9 +1622,9 @@ async function findCourierByPin(pinCode){
 }
 
 
-/* =========================================================
+/* =====================================================
    SAVE ENTRY
-========================================================= */
+===================================================== */
 
 async function saveEntry(
 
@@ -1365,10 +1639,7 @@ async function saveEntry(
 ){
 
   /*
-     -------------------------------------------------
-     STEP 1
-     A:I existing data read
-     -------------------------------------------------
+     Existing A:I read
   */
 
   const existingRange =
@@ -1382,14 +1653,20 @@ async function saveEntry(
 
 
   const existingResponse =
-    await fetch(existingUrl,{
+    await fetch(
 
-      headers:{
-        Authorization:
-          "Bearer " + accessToken
+      existingUrl,
+
+      {
+
+        headers:{
+          Authorization:
+            "Bearer " + accessToken
+        }
+
       }
 
-    });
+    );
 
 
   if(!existingResponse.ok){
@@ -1407,23 +1684,30 @@ async function saveEntry(
 
   const existingRow =
     (
+
       existingData.values &&
       existingData.values[0]
+
     ) || [];
 
 
   /*
-     -------------------------------------------------
      AWB preserve
-     -------------------------------------------------
   */
 
   if(
+
     (
       !rowData[1] ||
-      String(rowData[1]).trim() === ""
-    ) &&
+      String(
+        rowData[1]
+      ).trim() === ""
+    )
+
+    &&
+
     existingRow[1]
+
   ){
 
     rowData[1] =
@@ -1433,10 +1717,9 @@ async function saveEntry(
 
 
   /*
-     -------------------------------------------------
-     STEP 2
-     A:I save
-     -------------------------------------------------
+     ================================================
+     A:I SAVE
+     ================================================
   */
 
   const dataRange =
@@ -1450,35 +1733,41 @@ async function saveEntry(
 
 
   const dataResponse =
-    await fetch(dataUrl,{
+    await fetch(
 
-      method:"PUT",
+      dataUrl,
 
-      headers:{
+      {
 
-        Authorization:
-          "Bearer " + accessToken,
+        method:"PUT",
 
-        "Content-Type":
-          "application/json"
+        headers:{
 
-      },
+          Authorization:
+            "Bearer " + accessToken,
 
-      body:JSON.stringify({
+          "Content-Type":
+            "application/json"
 
-        range:
-          `${SHEET_NAME}!A${rowNumber}:I${rowNumber}`,
+        },
 
-        majorDimension:
-          "ROWS",
+        body:JSON.stringify({
 
-        values:[
-          rowData
-        ]
+          range:
+            `${SHEET_NAME}!A${rowNumber}:I${rowNumber}`,
 
-      })
+          majorDimension:
+            "ROWS",
 
-    });
+          values:[
+            rowData
+          ]
+
+        })
+
+      }
+
+    );
 
 
   if(!dataResponse.ok){
@@ -1486,23 +1775,19 @@ async function saveEntry(
     const errorText =
       await dataResponse.text();
 
+
     throw new Error(
-      "A:I save failed - " + errorText
+      "A:I save failed - " +
+      errorText
     );
 
   }
 
 
   /*
-     -------------------------------------------------
-     STEP 3
-     J = Courier
-     K = Original Courier
-     -------------------------------------------------
-
-     Important:
-     Courier HTML se calculate ho raha hai.
-     Sheet me formula delete nahi kiya ja raha.
+     ================================================
+     J:K SAVE
+     ================================================
   */
 
   const courier =
@@ -1524,39 +1809,45 @@ async function saveEntry(
 
 
   const courierResponse =
-    await fetch(courierUrl,{
+    await fetch(
 
-      method:"PUT",
+      courierUrl,
 
-      headers:{
+      {
 
-        Authorization:
-          "Bearer " + accessToken,
+        method:"PUT",
 
-        "Content-Type":
-          "application/json"
+        headers:{
 
-      },
+          Authorization:
+            "Bearer " + accessToken,
 
-      body:JSON.stringify({
+          "Content-Type":
+            "application/json"
 
-        range:
-          `${SHEET_NAME}!J${rowNumber}:K${rowNumber}`,
+        },
 
-        majorDimension:
-          "ROWS",
+        body:JSON.stringify({
 
-        values:[[
+          range:
+            `${SHEET_NAME}!J${rowNumber}:K${rowNumber}`,
 
-          courier,
+          majorDimension:
+            "ROWS",
 
-          originalCourier
+          values:[[
 
-        ]]
+            courier,
 
-      })
+            originalCourier
 
-    });
+          ]]
+
+        })
+
+      }
+
+    );
 
 
   if(!courierResponse.ok){
@@ -1564,28 +1855,29 @@ async function saveEntry(
     const errorText =
       await courierResponse.text();
 
+
     throw new Error(
-      "J:K save failed - " + errorText
+      "J:K save failed - " +
+      errorText
     );
 
   }
 
 
   /*
-     Yahan tak aane ka matlab:
-     A:I SUCCESS
-     J:K SUCCESS
+     IMPORTANT:
+     Is function ke yahan tak complete hone ka
+     matlab A:I aur J:K dono successful hain.
 
-     Isliye beep onScanSuccess() me
-     saveEntry() ke BAAD bajega.
+     Iske BAAD onScanSuccess() me beep() chalega.
   */
 
 }
 
 
-/* =========================================================
-   SHOW MESSAGE
-========================================================= */
+/* =====================================================
+   MESSAGE
+===================================================== */
 
 function showMessage(
 
@@ -1596,7 +1888,9 @@ function showMessage(
 ){
 
   const box =
-    document.getElementById("message");
+    document.getElementById(
+      "message"
+    );
 
 
   box.textContent =
@@ -1609,18 +1903,24 @@ function showMessage(
 }
 
 
-/* =========================================================
-   PREVENT PAGE ZOOM / DOUBLE TAP
-========================================================= */
+/* =====================================================
+   DOUBLE CLICK ZOOM PREVENT
+===================================================== */
 
 document.addEventListener(
+
   "dblclick",
+
   function(e){
 
     e.preventDefault();
 
   },
-  {passive:false}
+
+  {
+    passive:false
+  }
+
 );
 
 </script>
