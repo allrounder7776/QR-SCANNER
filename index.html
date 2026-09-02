@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="hi">
 
@@ -5,135 +6,364 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>QR Scanner - Google Sheets</title>
+<title>QR Scanner - Packing Slip</title>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 
 <style>
+* {
+  box-sizing: border-box;
+}
 
 body {
-  font-family: Arial, sans-serif;
-  text-align: center;
   margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, #eef4ff, #f8fbff);
+  color: #1f2937;
+}
+
+/* MAIN CONTAINER */
+.container {
+  width: 100%;
+  max-width: 650px;
+  margin: auto;
   padding: 18px;
-  background: #f5f5f5;
 }
 
-h2 {
-  margin-bottom: 15px;
+/* HEADER */
+.header {
+  background: white;
+  border-radius: 18px;
+  padding: 18px 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+  text-align: center;
 }
 
-button {
-  padding: 13px 22px;
-  font-size: 17px;
+.header h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.header p {
+  margin: 7px 0 0;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+/* LOGIN BUTTON */
+#loginBtn {
+  width: 100%;
+  padding: 14px;
   border: none;
-  border-radius: 7px;
+  border-radius: 12px;
   background: #4285f4;
   color: white;
+  font-size: 16px;
+  font-weight: bold;
   cursor: pointer;
+  margin-bottom: 15px;
+  box-shadow: 0 5px 15px rgba(66,133,244,0.25);
 }
 
+#loginBtn:hover {
+  opacity: 0.92;
+}
+
+/* SCANNER CARD */
+.scanner-card {
+  background: white;
+  border-radius: 20px;
+  padding: 15px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+}
+
+/* SCANNER TITLE */
+.scanner-title {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.scanner-title h2 {
+  margin: 0;
+  font-size: 19px;
+}
+
+.scanner-title p {
+  margin: 5px 0 0;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+/* CAMERA AREA */
+.camera-wrapper {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #111827;
+}
+
+/* HTML5 QR READER */
 #reader {
   width: 100%;
-  max-width: 500px;
-  margin: 18px auto;
-  background: white;
+  margin: 0 auto;
 }
 
+/* Hide unwanted html5-qrcode text/buttons */
+#reader__dashboard_section_csr button {
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 8px 12px !important;
+}
+
+#reader__dashboard_section_swaplink {
+  display: none !important;
+}
+
+/* SCAN FRAME */
+.scan-frame {
+  position: absolute;
+  width: 70%;
+  height: 70%;
+  max-width: 300px;
+  max-height: 300px;
+  top: 15%;
+  left: 15%;
+  pointer-events: none;
+}
+
+/* CORNERS */
+.corner {
+  position: absolute;
+  width: 38px;
+  height: 38px;
+  border-color: white;
+  border-style: solid;
+}
+
+.corner.tl {
+  top: 0;
+  left: 0;
+  border-width: 4px 0 0 4px;
+  border-radius: 8px 0 0 0;
+}
+
+.corner.tr {
+  top: 0;
+  right: 0;
+  border-width: 4px 4px 0 0;
+  border-radius: 0 8px 0 0;
+}
+
+.corner.bl {
+  bottom: 0;
+  left: 0;
+  border-width: 0 0 4px 4px;
+  border-radius: 0 0 0 8px;
+}
+
+.corner.br {
+  bottom: 0;
+  right: 0;
+  border-width: 0 4px 4px 0;
+  border-radius: 0 0 8px 0;
+}
+
+/* SCAN LINE */
+.scan-line {
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  top: 10%;
+  height: 3px;
+  background: white;
+  box-shadow: 0 0 12px rgba(255,255,255,0.9);
+  animation: scanMove 2s infinite ease-in-out;
+}
+
+@keyframes scanMove {
+  0% {
+    top: 10%;
+    opacity: 0.6;
+  }
+
+  50% {
+    top: 88%;
+    opacity: 1;
+  }
+
+  100% {
+    top: 10%;
+    opacity: 0.6;
+  }
+}
+
+/* MESSAGE */
 #message {
   margin-top: 15px;
-  font-size: 18px;
+  padding: 13px;
+  border-radius: 12px;
+  text-align: center;
+  font-size: 15px;
   font-weight: bold;
   line-height: 1.5;
   word-break: break-word;
 }
 
+.info {
+  background: #eef2ff;
+  color: #374151;
+}
+
 .success {
-  color: green;
+  background: #ecfdf5;
+  color: #047857;
 }
 
 .error {
-  color: red;
+  background: #fef2f2;
+  color: #b91c1c;
 }
 
-.info {
-  color: #333;
+/* FOOTER INFO */
+.footer-info {
+  text-align: center;
+  margin-top: 14px;
+  color: #6b7280;
+  font-size: 12px;
 }
 
+/* MOBILE */
+@media (max-width: 500px) {
+
+  .container {
+    padding: 10px;
+  }
+
+  .header {
+    padding: 15px;
+    border-radius: 15px;
+  }
+
+  .header h1 {
+    font-size: 21px;
+  }
+
+  .scanner-card {
+    padding: 10px;
+    border-radius: 16px;
+  }
+
+  .scan-frame {
+    width: 72%;
+    height: 72%;
+    top: 14%;
+    left: 14%;
+  }
+
+  .corner {
+    width: 32px;
+    height: 32px;
+  }
+}
 </style>
+
 </head>
 
 <body>
 
-<h2>📷 QR Scanner</h2>
+<div class="container">
 
-<button id="loginBtn">
-🔐 Google Account Connect करें
-</button>
+  <div class="header">
+    <h1>📦 Packing Slip QR Scanner</h1>
+    <p>QR Code Scan करके Entry Google Sheet में Save करें</p>
+  </div>
 
-<div id="reader"></div>
+  <button id="loginBtn">
+    🔐 Google Account Connect करें
+  </button>
 
-<div id="message" class="info">
-Google Account check हो रहा है...
+  <div class="scanner-card">
+
+    <div class="scanner-title">
+      <h2>📷 QR Code Scanner</h2>
+      <p>QR Code को बॉक्स के अंदर रखें</p>
+    </div>
+
+    <div class="camera-wrapper">
+
+      <div id="reader"></div>
+
+      <div class="scan-frame">
+
+        <div class="corner tl"></div>
+        <div class="corner tr"></div>
+        <div class="corner bl"></div>
+        <div class="corner br"></div>
+
+        <div class="scan-line"></div>
+
+      </div>
+
+    </div>
+
+    <div id="message" class="info">
+      Google Account check हो रहा है...
+    </div>
+
+  </div>
+
+  <div class="footer-info">
+    QR Scanner • Google Sheets Integration
+  </div>
+
 </div>
+
 
 <script>
 
-// =====================================================
-// SETTINGS
-// =====================================================
+/* ================================
+   GOOGLE / SHEET SETTINGS
+================================ */
 
 const CLIENT_ID =
 "308840508820-b3qjh155tuj3jl53fqudm2aadk0omm8s.apps.googleusercontent.com";
 
 const SPREADSHEET_ID =
-"19CzQLHAihdyNl51W4nzcfzlYGs5V6n1PcOxCWwN-xRg";
+"19CzQLHAihdyNl51W4nzcfzlYGs5V6n1PcOxCWW-nxRg";
 
-const SHEET_NAME =
-"Sheet1";
+const SHEET_NAME = "Sheet1";
 
-const PIN_SHEET_NAME =
-"PIN CODE";
+const PIN_SHEET_NAME = "PIN CODE";
 
 const SHEETS_SCOPE =
 "https://www.googleapis.com/auth/spreadsheets";
 
 
-
-// =====================================================
-// VARIABLES
-// =====================================================
+/* ================================
+   VARIABLES
+================================ */
 
 let accessToken = null;
 let tokenClient = null;
-let scanner = null;
 
+let scanner = null;
 let scanning = false;
 let saving = false;
 
 let nextRow = 2;
 
-// PIN CODE data memory/cache
-let pinCourierMap = new Map();
-
-// Audio
-let audioContext = null;
-
-
-
-// =====================================================
-// LOGIN MEMORY
-// =====================================================
-
 const LOGIN_MEMORY_KEY =
 "qr_scanner_google_connected";
 
 
-
-// =====================================================
-// MESSAGE
-// =====================================================
+/* ================================
+   MESSAGE
+================================ */
 
 function showMessage(text, type) {
 
@@ -144,29 +374,23 @@ function showMessage(text, type) {
 
   box.className =
     type || "info";
-
 }
 
 
+/* ================================
+   PAGE LOAD
+================================ */
 
-// =====================================================
-// PAGE LOAD
-// =====================================================
+window.addEventListener("load", function() {
 
-window.addEventListener(
-  "load",
-  function() {
+  initializeGoogle();
 
-    initializeGoogle();
-
-  }
-);
+});
 
 
-
-// =====================================================
-// GOOGLE INITIALIZE
-// =====================================================
+/* ================================
+   GOOGLE INITIALIZE
+================================ */
 
 function initializeGoogle() {
 
@@ -182,43 +406,30 @@ function initializeGoogle() {
     );
 
     return;
-
   }
-
 
 
   tokenClient =
     google.accounts.oauth2.initTokenClient({
 
-      client_id:
-        CLIENT_ID,
+      client_id: CLIENT_ID,
 
-      scope:
-        SHEETS_SCOPE,
+      scope: SHEETS_SCOPE,
 
-      callback:
-        handleTokenResponse
+      callback: handleTokenResponse
 
     });
 
 
-
   const remembered =
-    localStorage.getItem(
-      LOGIN_MEMORY_KEY
-    );
+    localStorage.getItem(LOGIN_MEMORY_KEY);
 
 
-
-  if (
-    remembered === "YES"
-  ) {
+  if (remembered === "YES") {
 
     autoConnect();
 
-  }
-
-  else {
+  } else {
 
     showMessage(
       "🔐 Google Account Connect करें",
@@ -230,19 +441,16 @@ function initializeGoogle() {
 }
 
 
-
-// =====================================================
-// AUTO CONNECT
-// =====================================================
+/* ================================
+   AUTO CONNECT
+================================ */
 
 function autoConnect() {
 
   try {
 
     tokenClient.requestAccessToken({
-
       prompt: ""
-
     });
 
   }
@@ -256,19 +464,14 @@ function autoConnect() {
 }
 
 
-
-// =====================================================
-// SHOW LOGIN BUTTON
-// =====================================================
+/* ================================
+   LOGIN BUTTON
+================================ */
 
 function showLoginButton() {
 
-  document
-    .getElementById("loginBtn")
-    .style.display =
-    "inline-block";
-
-
+  document.getElementById("loginBtn")
+    .style.display = "block";
 
   showMessage(
     "🔐 Google Account Connect करें",
@@ -278,110 +481,37 @@ function showLoginButton() {
 }
 
 
-
-// =====================================================
-// LOGIN BUTTON
-// =====================================================
-
 document
-  .getElementById("loginBtn")
-  .addEventListener(
-    "click",
-    function() {
+.getElementById("loginBtn")
+.addEventListener("click", function() {
 
-      // Audio context पहले initialize कर दें
-      prepareAudio();
+  if (!tokenClient) {
 
+    showMessage(
+      "❌ Google Login तैयार नहीं है",
+      "error"
+    );
 
-
-      if (!tokenClient) {
-
-        showMessage(
-          "❌ Google Login तैयार नहीं है",
-          "error"
-        );
-
-        return;
-
-      }
+    return;
+  }
 
 
-
-      showMessage(
-        "⏳ Google authorization...",
-        "info"
-      );
-
-
-
-      tokenClient.requestAccessToken({
-
-        prompt: ""
-
-      });
-
-    }
+  showMessage(
+    "⏳ Google authorization...",
+    "info"
   );
 
 
+  tokenClient.requestAccessToken({
+    prompt: ""
+  });
 
-// =====================================================
-// AUDIO PREPARE
-// =====================================================
-
-function prepareAudio() {
-
-  try {
-
-    const AudioContext =
-      window.AudioContext ||
-      window.webkitAudioContext;
+});
 
 
-
-    if (!AudioContext) {
-
-      return;
-
-    }
-
-
-
-    if (!audioContext) {
-
-      audioContext =
-        new AudioContext();
-
-    }
-
-
-
-    if (
-      audioContext.state === "suspended"
-    ) {
-
-      audioContext.resume();
-
-    }
-
-  }
-
-  catch (e) {
-
-    console.log(
-      "Audio prepare error:",
-      e
-    );
-
-  }
-
-}
-
-
-
-// =====================================================
-// TOKEN RESPONSE
-// =====================================================
+/* ================================
+   TOKEN RESPONSE
+================================ */
 
 function handleTokenResponse(response) {
 
@@ -405,9 +535,7 @@ function handleTokenResponse(response) {
     );
 
     return;
-
   }
-
 
 
   if (!response.access_token) {
@@ -422,14 +550,11 @@ function handleTokenResponse(response) {
     );
 
     return;
-
   }
-
 
 
   accessToken =
     response.access_token;
-
 
 
   localStorage.setItem(
@@ -438,25 +563,18 @@ function handleTokenResponse(response) {
   );
 
 
+  document.getElementById("loginBtn")
+    .style.display = "none";
 
-  document
-    .getElementById("loginBtn")
-    .style.display =
-    "none";
-
-
-
-  prepareAudio();
 
   testSheetAccess();
 
 }
 
 
-
-// =====================================================
-// TEST SHEET
-// =====================================================
+/* ================================
+   TEST SHEET
+================================ */
 
 async function testSheetAccess() {
 
@@ -467,33 +585,22 @@ async function testSheetAccess() {
       SPREADSHEET_ID;
 
 
-
     const response =
-      await fetch(
-        url,
-        {
+      await fetch(url, {
 
-          headers: {
-
-            "Authorization":
-              "Bearer " +
-              accessToken
-
-          }
-
+        headers: {
+          "Authorization":
+            "Bearer " + accessToken
         }
-      );
 
+      });
 
 
     const text =
       await response.text();
 
 
-
     let result;
-
-
 
     try {
 
@@ -509,7 +616,6 @@ async function testSheetAccess() {
       );
 
     }
-
 
 
     if (!response.ok) {
@@ -530,7 +636,6 @@ async function testSheetAccess() {
       }
 
 
-
       throw new Error(
         result.error?.message ||
         "Google Sheet access failed"
@@ -539,15 +644,12 @@ async function testSheetAccess() {
     }
 
 
-
     const sheets =
       result.sheets || [];
 
 
-
     let mainFound = false;
     let pinFound = false;
-
 
 
     for (
@@ -560,65 +662,35 @@ async function testSheetAccess() {
         sheets[i].properties?.title;
 
 
-
-      if (
-        title === SHEET_NAME
-      ) {
-
+      if (title === SHEET_NAME)
         mainFound = true;
 
-      }
 
-
-
-      if (
-        title === PIN_SHEET_NAME
-      ) {
-
+      if (title === PIN_SHEET_NAME)
         pinFound = true;
-
-      }
 
     }
 
 
-
-    if (!mainFound) {
-
+    if (!mainFound)
       throw new Error(
         "Sheet1 नहीं मिली"
       );
 
-    }
 
-
-
-    if (!pinFound) {
-
+    if (!pinFound)
       throw new Error(
         "PIN CODE sheet नहीं मिली"
       );
 
-    }
 
-
-
-    // दोनों काम एक साथ
-    await Promise.all([
-
-      findNextEntryRow(),
-
-      loadPinCourierData()
-
-    ]);
-
+    await findNextEntryRow();
 
 
     showMessage(
       "✅ Google Account Connected<br>📷 अब QR Scan करें",
       "success"
     );
-
 
 
     startScanner();
@@ -638,30 +710,20 @@ async function testSheetAccess() {
 }
 
 
-
-// =====================================================
-// FIND NEXT ENTRY ROW
-// =====================================================
-//
-// C = NAME
-//
-// Row 2 से पहली खाली C row
-//
-// J को check नहीं किया जाएगा.
-//
-// =====================================================
+/* ================================
+   FIND NEXT ROW
+   COLUMN C BASED
+================================ */
 
 async function findNextEntryRow() {
 
   nextRow = 2;
 
 
-
   const range =
     encodeURIComponent(
       SHEET_NAME + "!C2:C"
     );
-
 
 
   const url =
@@ -671,33 +733,22 @@ async function findNextEntryRow() {
     range;
 
 
-
   const response =
-    await fetch(
-      url,
-      {
+    await fetch(url, {
 
-        headers: {
-
-          "Authorization":
-            "Bearer " +
-            accessToken
-
-        }
-
+      headers: {
+        "Authorization":
+          "Bearer " + accessToken
       }
-    );
 
+    });
 
 
   const text =
     await response.text();
 
 
-
   let result;
-
-
 
   try {
 
@@ -715,7 +766,6 @@ async function findNextEntryRow() {
   }
 
 
-
   if (!response.ok) {
 
     throw new Error(
@@ -726,10 +776,8 @@ async function findNextEntryRow() {
   }
 
 
-
   const values =
     result.values || [];
-
 
 
   for (
@@ -741,19 +789,13 @@ async function findNextEntryRow() {
     const name =
       values[i] &&
       values[i][0] !== undefined
-        ? String(
-            values[i][0]
-          ).trim()
+        ? String(values[i][0]).trim()
         : "";
 
 
+    if (name === "") {
 
-    if (
-      name === ""
-    ) {
-
-      nextRow =
-        i + 2;
+      nextRow = i + 2;
 
       return;
 
@@ -762,172 +804,23 @@ async function findNextEntryRow() {
   }
 
 
-
   nextRow =
     values.length + 2;
 
 }
 
 
-
-// =====================================================
-// LOAD PIN CODE DATA
-// =====================================================
-//
-// PIN CODE sheet:
-//
-// A = PIN
-// B = COURIER
-//
-// इसे एक बार memory में load किया जाएगा.
-// हर QR scan पर पूरी sheet नहीं पढ़नी पड़ेगी.
-//
-// =====================================================
-
-async function loadPinCourierData() {
-
-  const range =
-    encodeURIComponent(
-      PIN_SHEET_NAME + "!A:B"
-    );
-
-
-
-  const url =
-    "https://sheets.googleapis.com/v4/spreadsheets/" +
-    SPREADSHEET_ID +
-    "/values/" +
-    range;
-
-
-
-  const response =
-    await fetch(
-      url,
-      {
-
-        headers: {
-
-          "Authorization":
-            "Bearer " +
-            accessToken
-
-        }
-
-      }
-    );
-
-
-
-  const text =
-    await response.text();
-
-
-
-  let result;
-
-
-
-  try {
-
-    result =
-      JSON.parse(text);
-
-  }
-
-  catch {
-
-    throw new Error(
-      "PIN CODE data invalid है"
-    );
-
-  }
-
-
-
-  if (!response.ok) {
-
-    throw new Error(
-      result.error?.message ||
-      "PIN CODE sheet पढ़ नहीं पाए"
-    );
-
-  }
-
-
-
-  const values =
-    result.values || [];
-
-
-
-  pinCourierMap =
-    new Map();
-
-
-
-  for (
-    let i = 0;
-    i < values.length;
-    i++
-  ) {
-
-    const pin =
-      values[i] &&
-      values[i][0] !== undefined
-        ? String(
-            values[i][0]
-          ).trim()
-        : "";
-
-
-
-    const courier =
-      values[i] &&
-      values[i][1] !== undefined
-        ? String(
-            values[i][1]
-          ).trim()
-        : "";
-
-
-
-    if (
-      pin !== ""
-    ) {
-
-      pinCourierMap.set(
-        pin,
-        courier
-      );
-
-    }
-
-  }
-
-}
-
-
-
-// =====================================================
-// START CAMERA
-// =====================================================
+/* ================================
+   START SCANNER
+================================ */
 
 function startScanner() {
 
-  if (scanner) {
-
-    return;
-
-  }
-
+  if (scanner) return;
 
 
   scanner =
-    new Html5Qrcode(
-      "reader"
-    );
-
+    new Html5Qrcode("reader");
 
 
   const config = {
@@ -944,92 +837,65 @@ function startScanner() {
   };
 
 
+  scanner.start(
 
-  scanner
-    .start(
-      {
-        facingMode:
-          "environment"
-      },
+    {
+      facingMode: "environment"
+    },
 
-      config,
+    config,
 
-      onScanSuccess,
+    onScanSuccess,
 
-      onScanFailure
+    onScanFailure
 
-    )
+  )
 
-    .then(
-      function() {
+  .then(function() {
 
-        scanning = true;
+    scanning = true;
 
-        prepareAudio();
-
-
-
-        showMessage(
-          "📷 QR Code Scan करें...",
-          "info"
-        );
-
-      }
-    )
-
-    .catch(
-      function(error) {
-
-        showMessage(
-          "❌ Camera start नहीं हुआ<br>" +
-          error,
-          "error"
-        );
-
-      }
+    showMessage(
+      "📷 QR Code Scan करें...",
+      "info"
     );
+
+  })
+
+  .catch(function(error) {
+
+    showMessage(
+      "❌ Camera start नहीं हुआ<br>" +
+      error,
+      "error"
+    );
+
+  });
 
 }
 
 
-
-// =====================================================
-// QR SUCCESS
-// =====================================================
+/* ================================
+   QR SUCCESS
+================================ */
 
 async function onScanSuccess(
   decodedText,
   decodedResult
 ) {
 
-  if (
-    !scanning ||
-    saving
-  ) {
-
+  if (!scanning || saving)
     return;
 
-  }
-
-
-
-  // ===================================================
-  // सबसे पहले lock
-  // ===================================================
 
   saving = true;
+
   scanning = false;
 
 
-
-  // ===================================================
-  // IMPORTANT:
-  // BEEP सबसे पहले
-  // Google Sheet/API का इंतजार नहीं
-  // ===================================================
+  /* BEEP IMMEDIATELY */
 
   beep();
-
 
 
   showMessage(
@@ -1038,88 +904,37 @@ async function onScanSuccess(
   );
 
 
-
   try {
 
-    // =================================================
-    // Row find करें
-    // =================================================
-
     await findNextEntryRow();
-
 
 
     const rowToSave =
       nextRow;
 
 
-
     const row =
-      convertQRToRow(
-        decodedText
-      );
+      convertQRToRow(decodedText);
 
-
-
-    // =================================================
-    // D = PINCODE
-    // =================================================
 
     const pinCode =
       row[3] !== undefined
-        ? String(
-            row[3]
-          ).trim()
+        ? String(row[3]).trim()
         : "";
 
 
-
-    // =================================================
-    // A:I और J:K दोनों reading एक साथ
-    // =================================================
-
-    const results =
-      await Promise.all([
-
-        readExistingAI(
-          rowToSave
-        ),
-
-        readCourierData(
-          rowToSave
-        )
-
-      ]);
-
-
-
-    const existingRow =
-      results[0];
-
-
-
     const existingData =
-      results[1];
+      await readCourierData(
+        rowToSave
+      );
 
-
-
-    // =================================================
-    // OLD COURIER
-    // =================================================
 
     let oldCourier =
       existingData.oldCourier;
 
 
-
-    if (
-      oldCourier === "#N/A"
-    ) {
-
+    if (oldCourier === "#N/A")
       oldCourier = "";
-
-    }
-
 
 
     if (
@@ -1134,53 +949,29 @@ async function onScanSuccess(
     }
 
 
-
-    // =================================================
-    // PIN से Courier
-    // अब Google API call नहीं
-    // memory से तुरंत मिलेगा
-    // =================================================
-
     let courier = "";
 
 
-
-    if (
-      pinCode !== ""
-    ) {
+    if (pinCode !== "") {
 
       courier =
-        findCourierByPin(
+        await findCourierByPin(
           pinCode
         );
 
     }
 
 
+    if (courier === "")
+      courier = "#N/A";
 
-    if (
-      courier === ""
-    ) {
-
-      courier =
-        "#N/A";
-
-    }
-
-
-
-    // =================================================
-    // ENTRY SAVE
-    // =================================================
 
     await saveEntry(
       row,
       rowToSave,
       courier,
-      oldCourier,
-      existingRow
+      oldCourier
     );
-
 
 
     showMessage(
@@ -1191,40 +982,28 @@ async function onScanSuccess(
     );
 
 
-
     nextRow =
       rowToSave + 1;
 
 
+    setTimeout(function() {
 
-    // =================================================
-    // अगले QR के लिए
-    // पुराना 2 second delay हटाया गया
-    // =================================================
+      saving = false;
 
-    setTimeout(
-      function() {
+      scanning = true;
 
-        saving = false;
-        scanning = true;
+      showMessage(
+        "📷 अगला QR Code Scan करें...",
+        "info"
+      );
 
-
-
-        showMessage(
-          "📷 अगला QR Code Scan करें...",
-          "info"
-        );
-
-      },
-      300
-    );
+    }, 300);
 
   }
 
   catch (error) {
 
     console.error(error);
-
 
 
     showMessage(
@@ -1234,130 +1013,29 @@ async function onScanSuccess(
     );
 
 
+    setTimeout(function() {
 
-    setTimeout(
-      function() {
+      saving = false;
 
-        saving = false;
-        scanning = true;
+      scanning = true;
 
+      showMessage(
+        "📷 फिर से QR Code Scan करें...",
+        "error"
+      );
 
-
-        showMessage(
-          "📷 फिर से QR Code Scan करें...",
-          "error"
-        );
-
-      },
-      2000
-    );
+    }, 3000);
 
   }
 
 }
 
 
+/* ================================
+   READ J:K
+================================ */
 
-// =====================================================
-// READ EXISTING A:I
-// =====================================================
-
-async function readExistingAI(
-  rowNumber
-) {
-
-  const readRange =
-    encodeURIComponent(
-      SHEET_NAME +
-      "!A" +
-      rowNumber +
-      ":I" +
-      rowNumber
-    );
-
-
-
-  const readUrl =
-    "https://sheets.googleapis.com/v4/spreadsheets/" +
-    SPREADSHEET_ID +
-    "/values/" +
-    readRange;
-
-
-
-  const response =
-    await fetch(
-      readUrl,
-      {
-
-        headers: {
-
-          "Authorization":
-            "Bearer " +
-            accessToken
-
-        }
-
-      }
-    );
-
-
-
-  const text =
-    await response.text();
-
-
-
-  let result;
-
-
-
-  try {
-
-    result =
-      JSON.parse(text);
-
-  }
-
-  catch {
-
-    throw new Error(
-      "Existing row invalid है"
-    );
-
-  }
-
-
-
-  if (!response.ok) {
-
-    throw new Error(
-      result.error?.message ||
-      "Existing row पढ़ नहीं पाए"
-    );
-
-  }
-
-
-
-  return (
-    result.values &&
-    result.values[0]
-      ? result.values[0]
-      : []
-  );
-
-}
-
-
-
-// =====================================================
-// READ J + K
-// =====================================================
-
-async function readCourierData(
-  rowNumber
-) {
+async function readCourierData(rowNumber) {
 
   const range =
     encodeURIComponent(
@@ -1369,7 +1047,6 @@ async function readCourierData(
     );
 
 
-
   const url =
     "https://sheets.googleapis.com/v4/spreadsheets/" +
     SPREADSHEET_ID +
@@ -1377,33 +1054,22 @@ async function readCourierData(
     range;
 
 
-
   const response =
-    await fetch(
-      url,
-      {
+    await fetch(url, {
 
-        headers: {
-
-          "Authorization":
-            "Bearer " +
-            accessToken
-
-        }
-
+      headers: {
+        "Authorization":
+          "Bearer " + accessToken
       }
-    );
 
+    });
 
 
   const text =
     await response.text();
 
 
-
   let result;
-
-
 
   try {
 
@@ -1421,7 +1087,6 @@ async function readCourierData(
   }
 
 
-
   if (!response.ok) {
 
     throw new Error(
@@ -1432,7 +1097,6 @@ async function readCourierData(
   }
 
 
-
   const values =
     result.values &&
     result.values[0]
@@ -1440,21 +1104,16 @@ async function readCourierData(
       : [];
 
 
-
   return {
 
     currentCourier:
       values[0] !== undefined
-        ? String(
-            values[0]
-          ).trim()
+        ? String(values[0]).trim()
         : "",
 
     oldCourier:
       values[1] !== undefined
-        ? String(
-            values[1]
-          ).trim()
+        ? String(values[1]).trim()
         : ""
 
   };
@@ -1462,65 +1121,122 @@ async function readCourierData(
 }
 
 
+/* ================================
+   FIND COURIER
+================================ */
 
-// =====================================================
-// FIND COURIER BY PIN
-// =====================================================
-//
-// अब Google Sheet को हर बार read नहीं किया जाएगा.
-// Memory Map से तुरंत result मिलेगा.
-//
-// =====================================================
+async function findCourierByPin(pinCode) {
 
-function findCourierByPin(
-  pinCode
-) {
-
-  const searchPin =
-    String(
-      pinCode
-    ).trim();
+  const range =
+    encodeURIComponent(
+      PIN_SHEET_NAME + "!A:B"
+    );
 
 
+  const url =
+    "https://sheets.googleapis.com/v4/spreadsheets/" +
+    SPREADSHEET_ID +
+    "/values/" +
+    range;
 
-  if (
-    searchPin === ""
-  ) {
 
-    return "";
+  const response =
+    await fetch(url, {
+
+      headers: {
+        "Authorization":
+          "Bearer " + accessToken
+      }
+
+    });
+
+
+  const text =
+    await response.text();
+
+
+  let result;
+
+  try {
+
+    result =
+      JSON.parse(text);
+
+  }
+
+  catch {
+
+    throw new Error(
+      "PIN CODE data invalid है"
+    );
 
   }
 
 
+  if (!response.ok) {
 
-  return (
-    pinCourierMap.get(
-      searchPin
-    ) || ""
-  );
+    throw new Error(
+      result.error?.message ||
+      "PIN CODE sheet पढ़ नहीं पाए"
+    );
+
+  }
+
+
+  const values =
+    result.values || [];
+
+
+  const searchPin =
+    String(pinCode).trim();
+
+
+  for (
+    let i = 0;
+    i < values.length;
+    i++
+  ) {
+
+    const sheetPin =
+      values[i] &&
+      values[i][0] !== undefined
+        ? String(values[i][0]).trim()
+        : "";
+
+
+    if (sheetPin === searchPin) {
+
+      const courier =
+        values[i][1] !== undefined
+          ? String(values[i][1]).trim()
+          : "";
+
+
+      return courier;
+
+    }
+
+  }
+
+
+  return "";
 
 }
 
 
+/* ================================
+   QR → ROW
+================================ */
 
-// =====================================================
-// CONVERT QR DATA
-// =====================================================
-
-function convertQRToRow(
-  qrText
-) {
+function convertQRToRow(qrText) {
 
   let data = null;
-
 
 
   try {
 
     data =
-      JSON.parse(
-        qrText
-      );
+      JSON.parse(qrText);
 
   }
 
@@ -1529,7 +1245,6 @@ function convertQRToRow(
     data = null;
 
   }
-
 
 
   if (
@@ -1584,7 +1299,6 @@ function convertQRToRow(
   }
 
 
-
   return [
 
     getToday(),
@@ -1610,25 +1324,15 @@ function convertQRToRow(
 }
 
 
-
-// =====================================================
-// SAVE ENTRY
-// =====================================================
-//
-// A:I = QR DATA
-//
-// J = COURIER
-//
-// K = ORIGINAL COURIER
-//
-// =====================================================
+/* ================================
+   SAVE ENTRY
+================================ */
 
 async function saveEntry(
   row,
   rowToSave,
   courier,
-  oldCourier,
-  existingRow
+  oldCourier
 ) {
 
   if (!accessToken) {
@@ -1640,32 +1344,87 @@ async function saveEntry(
   }
 
 
+  /* READ EXISTING A:I */
 
-  // ===================================================
-  // EXISTING AWB
-  // ===================================================
+  const readRange =
+    encodeURIComponent(
+      SHEET_NAME +
+      "!A" +
+      rowToSave +
+      ":I" +
+      rowToSave
+    );
+
+
+  const readUrl =
+    "https://sheets.googleapis.com/v4/spreadsheets/" +
+    SPREADSHEET_ID +
+    "/values/" +
+    readRange;
+
+
+  const readResponse =
+    await fetch(readUrl, {
+
+      headers: {
+        "Authorization":
+          "Bearer " + accessToken
+      }
+
+    });
+
+
+  const readText =
+    await readResponse.text();
+
+
+  let readResult;
+
+
+  try {
+
+    readResult =
+      JSON.parse(readText);
+
+  }
+
+  catch {
+
+    throw new Error(
+      "Existing row invalid है"
+    );
+
+  }
+
+
+  if (!readResponse.ok) {
+
+    throw new Error(
+      readResult.error?.message ||
+      "Existing row पढ़ नहीं पाए"
+    );
+
+  }
+
+
+  const existingRow =
+    readResult.values &&
+    readResult.values[0]
+      ? readResult.values[0]
+      : [];
+
 
   const existingAWB =
     existingRow[1] !== undefined
-      ? String(
-          existingRow[1]
-        ).trim()
+      ? String(existingRow[1]).trim()
       : "";
-
 
 
   const newAWB =
     row[1] !== undefined
-      ? String(
-          row[1]
-        ).trim()
+      ? String(row[1]).trim()
       : "";
 
-
-
-  // ===================================================
-  // FINAL A:I
-  // ===================================================
 
   const finalRow = [
 
@@ -1692,10 +1451,7 @@ async function saveEntry(
   ];
 
 
-
-  // ===================================================
-  // A:I URL
-  // ===================================================
+  /* SAVE A:I */
 
   const rangeAI =
     encodeURIComponent(
@@ -1707,7 +1463,6 @@ async function saveEntry(
     );
 
 
-
   const urlAI =
     "https://sheets.googleapis.com/v4/spreadsheets/" +
     SPREADSHEET_ID +
@@ -1716,10 +1471,7 @@ async function saveEntry(
     "?valueInputOption=USER_ENTERED";
 
 
-
-  // ===================================================
-  // J:K URL
-  // ===================================================
+  /* SAVE J:K */
 
   const rangeJK =
     encodeURIComponent(
@@ -1731,7 +1483,6 @@ async function saveEntry(
     );
 
 
-
   const urlJK =
     "https://sheets.googleapis.com/v4/spreadsheets/" +
     SPREADSHEET_ID +
@@ -1740,102 +1491,80 @@ async function saveEntry(
     "?valueInputOption=RAW";
 
 
+  /* BOTH SAVE TOGETHER */
 
-  // ===================================================
-  // A:I + J:K दोनों SAVE एक साथ
-  // ===================================================
+  const responseAI =
+    fetch(urlAI, {
 
-  const [responseAI, responseJK] =
+      method: "PUT",
+
+      headers: {
+
+        "Authorization":
+          "Bearer " + accessToken,
+
+        "Content-Type":
+          "application/json"
+
+      },
+
+      body: JSON.stringify({
+
+        majorDimension: "ROWS",
+
+        values: [finalRow]
+
+      })
+
+    });
+
+
+  const responseJK =
+    fetch(urlJK, {
+
+      method: "PUT",
+
+      headers: {
+
+        "Authorization":
+          "Bearer " + accessToken,
+
+        "Content-Type":
+          "application/json"
+
+      },
+
+      body: JSON.stringify({
+
+        majorDimension: "ROWS",
+
+        values: [[
+          courier,
+          oldCourier
+        ]]
+
+      })
+
+    });
+
+
+  const results =
     await Promise.all([
-
-      fetch(
-        urlAI,
-        {
-
-          method: "PUT",
-
-          headers: {
-
-            "Authorization":
-              "Bearer " +
-              accessToken,
-
-            "Content-Type":
-              "application/json"
-
-          },
-
-          body:
-            JSON.stringify({
-
-              majorDimension:
-                "ROWS",
-
-              values:
-                [finalRow]
-
-            })
-
-        }
-      ),
-
-      fetch(
-        urlJK,
-        {
-
-          method: "PUT",
-
-          headers: {
-
-            "Authorization":
-              "Bearer " +
-              accessToken,
-
-            "Content-Type":
-              "application/json"
-
-          },
-
-          body:
-            JSON.stringify({
-
-              majorDimension:
-                "ROWS",
-
-              values:
-                [
-                  [
-                    courier,
-                    oldCourier
-                  ]
-                ]
-
-            })
-
-        }
-      )
-
+      responseAI,
+      responseJK
     ]);
 
 
-
-  // ===================================================
-  // RESPONSE CHECK
-  // ===================================================
-
   const textAI =
-    await responseAI.text();
-
+    await results[0].text();
 
 
   const textJK =
-    await responseJK.text();
-
+    await results[1].text();
 
 
   let resultAI;
   let resultJK;
-
 
 
   try {
@@ -1854,7 +1583,6 @@ async function saveEntry(
   }
 
 
-
   try {
 
     resultJK =
@@ -1871,8 +1599,7 @@ async function saveEntry(
   }
 
 
-
-  if (!responseAI.ok) {
+  if (!results[0].ok) {
 
     throw new Error(
       resultAI.error?.message ||
@@ -1882,8 +1609,7 @@ async function saveEntry(
   }
 
 
-
-  if (!responseJK.ok) {
+  if (!results[1].ok) {
 
     throw new Error(
       resultJK.error?.message ||
@@ -1895,30 +1621,21 @@ async function saveEntry(
 }
 
 
-
-// =====================================================
-// DATE
-// =====================================================
+/* ================================
+   DATE
+================================ */
 
 function getToday() {
 
   return new Date()
-    .toLocaleDateString(
-      "en-GB"
-    );
+    .toLocaleDateString("en-GB");
 
 }
 
 
-
-// =====================================================
-// BEEP
-// =====================================================
-//
-// QR detect होते ही यह function call होगा.
-// API/Google Sheet save का इंतजार नहीं करेगा.
-//
-// =====================================================
+/* ================================
+   BEEP
+================================ */
 
 function beep() {
 
@@ -1929,102 +1646,63 @@ function beep() {
       window.webkitAudioContext;
 
 
-
-    if (!AudioContext) {
-
-      return;
-
-    }
-
-
-
-    if (!audioContext) {
-
-      audioContext =
-        new AudioContext();
-
-    }
-
-
-
-    if (
-      audioContext.state === "suspended"
-    ) {
-
-      audioContext.resume();
-
-    }
-
+    const audio =
+      new AudioContext();
 
 
     const oscillator =
-      audioContext.createOscillator();
-
+      audio.createOscillator();
 
 
     const gain =
-      audioContext.createGain();
+      audio.createGain();
 
 
-
-    oscillator.connect(
-      gain
-    );
-
-
+    oscillator.connect(gain);
 
     gain.connect(
-      audioContext.destination
+      audio.destination
     );
-
 
 
     oscillator.frequency.value =
       900;
 
 
-
     gain.gain.value =
       0.2;
-
 
 
     oscillator.start();
 
 
-
     oscillator.stop(
-      audioContext.currentTime +
-      0.15
+      audio.currentTime + 0.15
     );
 
   }
 
   catch (e) {
 
-    console.log(
-      "Beep error:",
-      e
-    );
+    console.log(e);
 
   }
 
 }
 
 
-
-// =====================================================
-// SCAN FAILURE
-// =====================================================
+/* ================================
+   SCAN FAILURE
+================================ */
 
 function onScanFailure(error) {
 
-  // Continuous scan errors ignored
+  /* Continuous scan errors ignored */
 
 }
 
 </script>
 
 </body>
-
 </html>
+```
