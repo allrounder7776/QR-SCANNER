@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="hi">
 
 <head>
@@ -8,6 +9,7 @@
 <title>QR Scanner - Google Sheets</title>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
+
 <script src="https://accounts.google.com/gsi/client"></script>
 
 <style>
@@ -192,53 +194,57 @@ button {
   <div class="card">
     <div class="google-status">
 
-      <div>
-        <div class="status-text status-disconnected" id="googleStatus">
-          Google Not Connected
-        </div>
-      </div>
-
-      <button id="connectBtn" onclick="connectGoogle()">
-        Connect Google
-      </button>
-
+```
+  <div>
+    <div class="status-text status-disconnected" id="googleStatus">
+      Google Not Connected
     </div>
   </div>
 
+  <button id="connectBtn" onclick="connectGoogle()">
+    Connect Google
+  </button>
+
+</div>
+```
+
+  </div>
 
   <div class="card row-box">
 
-    <div class="row-title">
-      Next Entry Row
-    </div>
+```
+<div class="row-title">
+  Next Entry Row
+</div>
 
-    <div id="nextRow">
-      --
-    </div>
+<div id="nextRow">
+  --
+</div>
+```
 
   </div>
 
-
   <div class="card">
 
-    <div id="reader-wrapper">
+```
+<div id="reader-wrapper">
 
-      <div id="reader"></div>
+  <div id="reader"></div>
 
-      <div class="scan-frame"></div>
+  <div class="scan-frame"></div>
 
-    </div>
+</div>
 
-    <div id="messageBox" class="message"></div>
+<div id="messageBox" class="message"></div>
 
-    <div class="hint">
-      QR Code को सफेद बॉक्स के अंदर रखें
-    </div>
+<div class="hint">
+  QR Code को सफेद बॉक्स के अंदर रखें
+</div>
+```
 
   </div>
 
 </div>
-
 
 <script>
 
@@ -247,8 +253,7 @@ button {
    ========================================================= */
 
 /*
-  IMPORTANT:
-  यह वही Client ID है जो Google Cloud Console में मौजूद है।
+   आपका दिया हुआ EXACT Client ID
 */
 
 const CLIENT_ID =
